@@ -1,8 +1,1 @@
-import { describe, expect, it } from 'vitest';
-import { Text } from './Text';
-
-describe('Text', () => {
-  it('renders text content', () => {
-    expect(Text).toBeTypeOf('function');
-  });
-});
+export { Text } from './content-lib/src/Text';

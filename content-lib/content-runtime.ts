@@ -1,3 +1,1 @@
-export function contentRuntime<T>(value: T): T {
-  return value;
-}
+export { contentRuntime } from './content-lib/src/content-runtime';
