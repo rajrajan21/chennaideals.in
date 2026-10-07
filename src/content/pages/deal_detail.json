@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "title": "Deal Detail — ChennaiDeals.in",
+    "description": "View deal details, vote, and join the discussion."
+  },
+  "labels": {
+    "backLink": "Back to deals",
+    "upvote": "Upvote",
+    "downvote": "Downvote",
+    "viewDeal": "View Deal",
+    "comments": "Comments",
+    "addComment": "Add a comment",
+    "submitComment": "Post Comment",
+    "loginToComment": "Sign in to comment",
+    "loginToVote": "Sign in to vote"
+  }
+}
