@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "title": "Submit a Deal — ChennaiDeals.in",
+    "description": "Share a great deal with the Chennai community."
+  },
+  "heading": "Submit a Deal",
+  "subheading": "Share a hot deal with Chennai! Deals start in New, move to Popular at 50 votes, and reach Front Page at 150 votes.",
+  "infoBox": "Your deal will appear in the New tab immediately. The community votes it up — at 50 votes it moves to Popular, and at 150 votes it hits the Front Page. Quality deals rise fast!",
+  "labels": {
+    "title": "Deal Title",
+    "originalPrice": "Original Price (₹)",
+    "salePrice": "Sale Price (₹)",
+    "retailer": "Retailer",
+    "category": "Category",
+    "area": "Chennai Area",
+    "url": "Deal Link (URL)",
+    "description": "Description",
+    "submit": "Submit Deal",
+    "submitting": "Submitting...",
+    "savingsMsg": "savings!",
+    "signInHeading": "Sign in to submit a deal",
+    "signInBody": "Join the ChennaiDeals community and share great deals with fellow Chennaiites!",
+    "signInCta": "Sign In / Sign Up"
+  },
+  "placeholders": {
+    "title": "e.g. Samsung Galaxy S24 at 30% off on Flipkart",
+    "originalPrice": "e.g. 79999",
+    "salePrice": "e.g. 54999",
+    "url": "https://www.flipkart.com/...",
+    "description": "Add details about the deal — coupon codes, conditions, how to get it..."
+  }
+}
