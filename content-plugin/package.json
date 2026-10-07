@@ -1,0 +1,39 @@
+{
+  "name": "@airo/content-plugin",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc src/keys.ts src/authority-marker.ts src/primitive-compliance.ts src/authored-keys.ts --ignoreConfig --outDir dist --declaration --target ES2022 --lib ES2022 --module nodenext --moduleResolution nodenext --strict --types node --skipLibCheck --esModuleInterop --forceConsistentCasingInFileNames",
+    "test": "npm run build && node --input-type=module -e \"await import('@airo/content-plugin/keys'); await import('@airo/content-plugin/authority-marker'); await import('@airo/content-plugin/primitive-compliance'); await import('@airo/content-plugin/authored-keys')\""
+  },
+  "devDependencies": {
+    "@babel/parser": "catalog:",
+    "@babel/traverse": "catalog:",
+    "@babel/types": "catalog:",
+    "@types/babel__traverse": "^7.28.0",
+    "typescript": "catalog:"
+  },
+  "exports": {
+    "./keys": {
+      "types": "./dist/keys.d.ts",
+      "default": "./dist/keys.js"
+    },
+    "./frontmatter": {
+      "types": "./dist/frontmatter.d.ts",
+      "default": "./dist/frontmatter.js"
+    },
+    "./primitive-compliance": {
+      "types": "./dist/primitive-compliance.d.ts",
+      "default": "./dist/primitive-compliance.js"
+    },
+    "./authored-keys": {
+      "types": "./dist/authored-keys.d.ts",
+      "default": "./dist/authored-keys.js"
+    },
+    "./authority-marker": {
+      "types": "./dist/authority-marker.d.ts",
+      "default": "./dist/authority-marker.js"
+    }
+  }
+}
