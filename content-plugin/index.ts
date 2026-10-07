@@ -1,9 +1,6 @@
-export default {
-  name: 'content-plugin',
-  transform(code: string) {
-    if (!code.includes('virtual-content-runtime')) {
-      return null;
-    }
-    return { code, map: null };
-  },
-};
+export * from './authorized-keys';
+export * from './authority-markets';
+export * from './frontmatter';
+export * from './keys';
+export * from './parse';
+export * from './primitive-compliance';
