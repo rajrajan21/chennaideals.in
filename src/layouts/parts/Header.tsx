@@ -43,33 +43,13 @@ export default function Header() {
       {/* Main nav */}
       <div className="px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center gap-3">
-          {/* Logo */}
-          <Link to="/" className="shrink-0 flex items-center gap-2">
-            <div
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
-              style={{ background: 'hsl(var(--header-overlay-dark) / 0.15)' }}
-            >
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="2" y="2" width="16" height="16" rx="3" fill="white" fillOpacity="0.9" />
-                <path d="M18 8L26 16L18 24L10 16L18 8Z" fill="white" fillOpacity="0.7" />
-                <circle cx="7" cy="7" r="2" fill="hsl(var(--primary))" />
-                <circle cx="3" cy="3" r="1" fill="white" fillOpacity="0.5" />
-                <circle cx="11" cy="3" r="1" fill="white" fillOpacity="0.5" />
-                <circle cx="3" cy="11" r="1" fill="white" fillOpacity="0.5" />
-                <circle cx="11" cy="11" r="1" fill="white" fillOpacity="0.5" />
-              </svg>
-              <span
-                className="text-xl font-bold tracking-tight text-white"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                Chennai<span className="text-secondary-foreground" style={{ color: 'hsl(var(--secondary-foreground))' }}>
-                  <span style={{ color: 'hsl(var(--footer-bg))' }}>Deals</span>
-                </span>
-              </span>
-              <span className="text-xs font-semibold px-1 rounded bg-secondary text-secondary-foreground">
-                .in
-              </span>
-            </div>
+             {/* Logo */}
+          <Link to="/" className="shrink-0 flex items-center" aria-label="ChennaiDeals.in home">
+            <img
+              src="/logo.jpg"
+              alt="ChennaiDeals.in - Best deals voted by you, Every rupee counts!"
+              className="h-14 w-auto rounded-lg bg-white shadow-sm"
+            />
           </Link>
 
           {/* Search bar */}
