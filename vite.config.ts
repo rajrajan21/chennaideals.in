@@ -5,12 +5,6 @@ import { existsSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { URL } from "node:url";
-import sourceMapperPlugin from "./source-mapper/src/index";
-import { devToolsPlugin } from "./dev-tools/src/vite-plugin";
-import { fullStoryPlugin } from "./fullstory-plugin";
-import { errorInterceptorPlugin } from "./dev-tools/src/vite-error-interceptor";
-import { mediaVersionsPlugin } from "./dev-tools/src/vite-media-versions-plugin";
-import { hmrGatePlugin } from "./dev-tools/src/vite-hmr-gate-plugin";
 import { formatOverridesPlugin } from "./format-overrides-plugin";
 import { contentPlugin } from "./content-plugin/src/index";
 
@@ -369,27 +363,14 @@ export default defineConfig(({ mode, isSsrBuild }) => ({
   envPrefix: ["VITE_", "SITE_"],
 
   plugins: [
-  react({
-    babel: {
-      plugins: [sourceMapperPlugin]
-    }
-  }),
-  ssrCjsCompatPlugin(),
-  ssrDevPlugin(),
-  worktreePreviewPlugin(),
-  apiDevPlugin(),
-  formatOverridesPlugin(__dirname),
-  contentPlugin(),
-  ...(mode === "development" ?
-  [
-  hmrGatePlugin() as Plugin,
-  devToolsPlugin() as Plugin,
-  fullStoryPlugin(),
-  errorInterceptorPlugin(),
-  mediaVersionsPlugin() as Plugin] :
-
-  [])],
-
+    react(),
+    ssrCjsCompatPlugin(),
+    ssrDevPlugin(),
+    worktreePreviewPlugin(),
+    apiDevPlugin(),
+    formatOverridesPlugin(__dirname),
+    contentPlugin()
+  ],
 
   resolve: {
     dedupe: ["react", "react-dom", "react-router"],
@@ -425,11 +406,6 @@ export default defineConfig(({ mode, isSsrBuild }) => ({
     watch: {
       ignored: ["**/dist/**"]
     },
-    // Pre-transform the entry chain on dev-server start so the FIRST iframe
-    // request doesn't pay the full cold on-demand transpile cost. Paired with
-    // the container's pre-start `vite optimize` (container-scripts/preview/
-    // nomad_setup.sh), this shrinks the mount→IFRAME_READY window that the
-    // builder's recovery logic waits on.
     warmup: {
       clientFiles: ["./src/main.tsx", "./src/App.tsx"]
     }
@@ -472,33 +448,33 @@ export default defineConfig(({ mode, isSsrBuild }) => ({
         manualChunks: {
           "react-vendor": ["react", "react-dom"],
           "radix-ui": [
-          "@radix-ui/react-accordion",
-          "@radix-ui/react-alert-dialog",
-          "@radix-ui/react-aspect-ratio",
-          "@radix-ui/react-avatar",
-          "@radix-ui/react-checkbox",
-          "@radix-ui/react-collapsible",
-          "@radix-ui/react-context-menu",
-          "@radix-ui/react-dialog",
-          "@radix-ui/react-dropdown-menu",
-          "@radix-ui/react-hover-card",
-          "@radix-ui/react-label",
-          "@radix-ui/react-menubar",
-          "@radix-ui/react-navigation-menu",
-          "@radix-ui/react-popover",
-          "@radix-ui/react-progress",
-          "@radix-ui/react-scroll-area",
-          "@radix-ui/react-select",
-          "@radix-ui/react-separator",
-          "@radix-ui/react-slider",
-          "@radix-ui/react-slot",
-          "@radix-ui/react-switch",
-          "@radix-ui/react-tabs",
-          "@radix-ui/react-toast",
-          "@radix-ui/react-toggle",
-          "@radix-ui/react-toggle-group",
-          "@radix-ui/react-tooltip"],
-
+            "@radix-ui/react-accordion",
+            "@radix-ui/react-alert-dialog",
+            "@radix-ui/react-aspect-ratio",
+            "@radix-ui/react-avatar",
+            "@radix-ui/react-checkbox",
+            "@radix-ui/react-collapsible",
+            "@radix-ui/react-context-menu",
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-hover-card",
+            "@radix-ui/react-label",
+            "@radix-ui/react-menubar",
+            "@radix-ui/react-navigation-menu",
+            "@radix-ui/react-popover",
+            "@radix-ui/react-progress",
+            "@radix-ui/react-scroll-area",
+            "@radix-ui/react-select",
+            "@radix-ui/react-separator",
+            "@radix-ui/react-slider",
+            "@radix-ui/react-slot",
+            "@radix-ui/react-switch",
+            "@radix-ui/react-tabs",
+            "@radix-ui/react-toast",
+            "@radix-ui/react-toggle",
+            "@radix-ui/react-toggle-group",
+            "@radix-ui/react-tooltip"
+          ],
           query: ["@tanstack/react-query"]
         }
       }
