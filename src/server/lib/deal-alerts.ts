@@ -1,6 +1,7 @@
 import { db } from '../db/client.js';
 import { dealAlertPreferences, user } from '../db/schema.js';
 import { getSecret } from '#airo/secrets';
+import { eq } from 'drizzle-orm';
 
 type NewDeal = {
   id: number;
@@ -14,8 +15,10 @@ type NewDeal = {
 };
 
 function secret(name: string): string {
-  const value = getSecret(name);
-  return typeof value === 'string' ? value.trim() : '';
+  try {
+    const value = getSecret(name);
+    return typeof value === 'string' ? value.trim() : '';
+  } catch { return ''; }
 }
 
 function parseList(value: string | null): string[] {
@@ -27,7 +30,7 @@ function parseList(value: string | null): string[] {
 }
 
 export async function notifyDealAlertSubscribers(deal: NewDeal): Promise<void> {
-  const [preferences] = await db.select({
+  const preferences = await db.select({
     userId: dealAlertPreferences.userId,
     keywords: dealAlertPreferences.keywords,
     categories: dealAlertPreferences.categories,
@@ -36,7 +39,7 @@ export async function notifyDealAlertSubscribers(deal: NewDeal): Promise<void> {
     phoneNumber: dealAlertPreferences.phoneNumber,
     email: user.email,
   }).from(dealAlertPreferences)
-    .innerJoin(user, (await import('drizzle-orm')).eq(dealAlertPreferences.userId, user.id));
+    .innerJoin(user, eq(dealAlertPreferences.userId, user.id));
 
   const searchable = [deal.title, deal.description || '', deal.retailer || ''].join(' ').toLowerCase();
   const url = `${(secret('PUBLIC_SITE_URL') || 'https://chennaideals.in').replace(/\/$/, '')}/deals/${deal.id}`;
