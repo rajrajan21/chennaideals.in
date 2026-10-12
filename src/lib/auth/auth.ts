@@ -80,8 +80,11 @@ export function getAuth() {
           return [origin];
         }
 
-        // Trust localhost for development
+        // Trust localhost for development and the production custom domain.
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          return [origin];
+        }
+        if (hostname === 'chennaideals.in' || hostname === 'www.chennaideals.in') {
           return [origin];
         }
 
