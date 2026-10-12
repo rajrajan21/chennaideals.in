@@ -254,6 +254,7 @@ export default function DealDetailPage() {
   const badge = statusBadge[deal.status] ?? statusBadge.new;
     const myId = (user as { id?: string } | null)?.id;
   const canAddMedia = Boolean(myId) && (isAdmin || deal.submittedBy === myId);
+  const hasDealImages = Boolean(deal.imageUrl || media.some((item) => item.type === 'image'));
 
     const q = commentQuery.trim().toLowerCase();
   const filteredComments = q
@@ -292,10 +293,14 @@ export default function DealDetailPage() {
             )}
           </div>
 
-          <div className={deal.imageUrl ? "grid grid-cols-1 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-5 lg:gap-8 items-start" : "block"}>
-            {deal.imageUrl && (
-              <div className="rounded-2xl bg-muted/70 p-2 sm:p-4 lg:sticky lg:top-6">
-                <img src={deal.imageUrl} alt={deal.title} className="max-h-[32rem] w-full rounded-xl object-contain" />
+          <div className={hasDealImages ? "grid grid-cols-1 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-5 lg:gap-8 items-start" : "block"}>
+            {hasDealImages && (
+              <div className="min-w-0 rounded-2xl border border-border bg-card p-2 sm:p-3 lg:sticky lg:top-6">
+                {media.some((item) => item.type === 'image') ? (
+                  <MediaGallery media={media} primaryUrl={deal.imageUrl} onSetPrimary={canAddMedia ? setPrimaryImage : undefined} showVideo={false} />
+                ) : (
+                  <img src={deal.imageUrl || ''} alt={deal.title} className="max-h-[32rem] w-full rounded-xl object-contain" />
+                )}
               </div>
             )}
 
@@ -387,10 +392,10 @@ export default function DealDetailPage() {
           </div>
         </motion.div>
 
-                {/* Photos & video */}
-        {(media.length > 0 || canAddMedia || uploadNotice) && (
+                {/* Photos & video management */}
+        {(media.some((item) => item.type === 'video') || canAddMedia || uploadNotice) && (
           <div className="bg-card rounded-xl border border-border p-4 mb-6">
-            <h3 className="text-xs font-bold uppercase tracking-widest mb-3 text-primary">Photos &amp; Video</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest mb-3 text-primary">Photos &amp; Video Management</h3>
 
             {uploadNotice && (
               <p className="text-sm mb-3" style={{ color: 'hsl(var(--destructive))' }}>
@@ -398,7 +403,7 @@ export default function DealDetailPage() {
               </p>
             )}
 
-            <MediaGallery media={media} primaryUrl={deal.imageUrl} onSetPrimary={canAddMedia ? setPrimaryImage : undefined} />
+            {media.some((item) => item.type === 'video') && <MediaGallery media={media.filter((item) => item.type === 'video')} primaryUrl={deal.imageUrl} />}
 
             {canAddMedia && (
               <div className={media.length > 0 ? 'mt-4 pt-4 border-t border-border' : ''}>
