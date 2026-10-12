@@ -2,7 +2,7 @@
 import type { Request, Response } from "express";
 import path from "node:path";
 import fs from "node:fs";
-import { UPLOAD_DIR } from "../../../lib/uploads.js";
+import { UPLOAD_DIR } from "../../lib/uploads.js";
 
 export default async function handler(req: Request, res: Response) {
   try {
