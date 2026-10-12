@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+      - feature/local-current-source-20261012
 
 permissions:
   contents: read
