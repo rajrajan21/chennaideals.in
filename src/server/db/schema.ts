@@ -136,3 +136,14 @@ export const savedDeals = mysqlTable('saved_deals', {
   index('idx_saved_user').on(t.userId),
   index('idx_saved_user_deal').on(t.userId, t.dealId),
 ]);
+
+export const dealMedia = mysqlTable('deal_media', {
+  id: int('id').primaryKey().autoincrement(),
+  dealId: int('deal_id').notNull().references(() => deals.id, { onDelete: 'cascade' }),
+  type: varchar('type', { length: 10 }).notNull(), // 'image' | 'video'
+  url: text('url').notNull(),
+  sortOrder: int('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (t) => [
+  index('idx_media_deal').on(t.dealId),
+]);

@@ -5,6 +5,8 @@ import { motion } from 'motion/react';
 import { ArrowLeft, Send, Info } from 'lucide-react';
 import { useSession } from '@/lib/auth/auth-client';
 import { submit_deal } from 'virtual:content';
+import MediaPicker from '@/components/MediaPicker';
+import { uploadDealMedia } from '@/lib/media';
 
 const CATEGORIES = ['Electronics', 'Mobile Phones', 'Fashion', 'Groceries', 'Restaurants', 'Home & Kitchen', 'Travel', 'Beauty', 'Sports', 'Books', 'Toys', 'Other'];
 const RETAILERS = ['Flipkart', 'Amazon', 'Meesho', 'Myntra', 'Nykaa', 'BigBasket', 'Swiggy', 'Zomato', 'Local Store', 'Other'];
@@ -13,6 +15,10 @@ const AREAS = ['Chennai (All)', 'T. Nagar', 'Anna Nagar', 'Velachery', 'Adyar', 
 export default function SubmitDealPage() {
   const navigate = useNavigate();
   const { user } = useSession();
+    const isAdmin = Boolean((user as { isAdmin?: boolean } | null)?.isAdmin);
+  const [images, setImages] = useState<File[]>([]);
+  const [primaryImageIndex, setPrimaryImageIndex] = useState(0);
+  const [video, setVideo] = useState<File | null>(null);
 
   const [form, setForm] = useState({
     title: '', description: '', longDetails: '', url: '',
@@ -47,7 +53,8 @@ export default function SubmitDealPage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Submission failed'); return; }
-      navigate(`/deals/${data.id}`);
+           const up = await uploadDealMedia(data.id, images, video, primaryImageIndex);
+      navigate(`/deals/${data.id}`, up.ok ? undefined : { state: { uploadError: up.error } });
     } catch {
       setError('Network error. Please try again.');
     } finally {
@@ -187,11 +194,11 @@ export default function SubmitDealPage() {
             {/* Long deal details */}
             <div>
               <label className="block text-sm font-semibold mb-1.5" style={{ color: 'hsl(var(--foreground))' }}>
-                Deal Long Details <span className="text-xs font-normal text-muted-foreground">(optional)</span>
+                Deal long details <span className="text-xs font-normal text-muted-foreground">(optional)</span>
               </label>
-              <p className="text-xs text-muted-foreground mb-2">Add specifications, coupon codes, offer conditions, delivery details, limitations, or why this is a good deal.</p>
+              <p className="text-xs text-muted-foreground mb-2">Add specifications, offer conditions, coupon codes, delivery details, limitations, or why this is a good deal.</p>
               <textarea value={form.longDetails} onChange={set('longDetails')} rows={6}
-                placeholder="Key features, coupon code, offer conditions, delivery or warranty details"
+                placeholder="• Key features and specifications&#10;• Coupon code / offer conditions&#10;• Delivery, warranty, or eligibility details"
                 className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm resize-y outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                 style={{ color: 'hsl(var(--foreground))' }} />
             </div>
@@ -201,6 +208,18 @@ export default function SubmitDealPage() {
                 {error}
               </div>
             )}
+                        {/* Photos & video */}
+            <div>
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: 'hsl(var(--foreground))' }}>
+                Photos{isAdmin ? ' & video' : ''}
+              </label>
+              <MediaPicker
+                images={images} video={video}
+                onImages={(next) => { setImages(next); setPrimaryImageIndex((current) => Math.min(current, Math.max(0, next.length - 1))); }} onVideo={setVideo}
+                primaryIndex={primaryImageIndex} onPrimaryIndex={setPrimaryImageIndex}
+                canVideo={isAdmin} disabled={submitting} onError={setError}
+              />
+            </div>
 
             <button type="submit" disabled={submitting}
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] disabled:opacity-60 disabled:scale-100"

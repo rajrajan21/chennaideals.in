@@ -27,8 +27,8 @@ interface Comment {
 
 const statusBadge: Record<string, { label: string; color: string }> = {
   new: { label: 'New', color: 'hsl(var(--muted-foreground))' },
-  popular: { label: '🔥 Popular', color: 'hsl(var(--deal-hot))' },
-  frontpage: { label: '⭐ Front Page', color: 'hsl(var(--deal-score-positive))' },
+  popular: { label: 'ðŸ”¥ Popular', color: 'hsl(var(--deal-hot))' },
+  frontpage: { label: 'â­ Front Page', color: 'hsl(var(--deal-score-positive))' },
 };
 
 export default function DealDetailPage() {
@@ -206,7 +206,7 @@ export default function DealDetailPage() {
       setSavingNote(false);
     }
   };
-  const fmt = (v: string | null) => v ? `₹${parseFloat(v).toLocaleString('en-IN')}` : null;
+  const fmt = (v: string | null) => v ? `â‚¹${parseFloat(v).toLocaleString('en-IN')}` : null;
   const timeAgo = (d: string) => {
     const diff = Date.now() - new Date(d).getTime();
     const h = Math.floor(diff / 3600000);
@@ -226,7 +226,7 @@ export default function DealDetailPage() {
   if (!deal) return (
     <main className="max-w-3xl mx-auto px-4 py-20 text-center">
       <p className="text-muted-foreground text-lg">Deal not found.</p>
-      <Link to="/" className="mt-4 inline-block text-primary hover:underline">← Back to deals</Link>
+      <Link to="/" className="mt-4 inline-block text-primary hover:underline">â† Back to deals</Link>
     </main>
   );
 
@@ -242,11 +242,11 @@ export default function DealDetailPage() {
   return (
     <>
       <Helmet>
-        <title>{deal.title} — ChennaiDeals.in</title>
+        <title>{deal.title} â€” ChennaiDeals.in</title>
         <meta name="description" content={deal.description?.slice(0, 160) ?? deal_detail.meta.description} />
       </Helmet>
 
-      <main className="max-w-3xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary mb-5 transition-colors">
           <ArrowLeft size={14} /> <span>{deal_detail.labels.backLink}</span>
         </Link>
@@ -256,7 +256,7 @@ export default function DealDetailPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="bg-card rounded-2xl border border-border p-5 mb-6"
+          className="bg-card rounded-3xl border border-border p-4 sm:p-6 mb-6 shadow-sm"
         >
           {/* Status badge */}
           <div className="flex items-center gap-2 mb-3">
@@ -271,11 +271,15 @@ export default function DealDetailPage() {
             )}
           </div>
 
-          {deal.imageUrl && (
-            <img src={deal.imageUrl} alt={deal.title} className="mb-4 max-h-[28rem] w-full rounded-xl object-contain bg-muted" />
-          )}
+          <div className={deal.imageUrl ? "grid grid-cols-1 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-5 lg:gap-8 items-start" : "block"}>
+            {deal.imageUrl && (
+              <div className="rounded-2xl bg-muted/70 p-2 sm:p-4 lg:sticky lg:top-6">
+                <img src={deal.imageUrl} alt={deal.title} className="max-h-[32rem] w-full rounded-xl object-contain" />
+              </div>
+            )}
 
-          <h1 className="text-xl font-bold mb-4 leading-snug" style={{ fontFamily: 'var(--font-heading)', color: 'hsl(var(--foreground))' }}>
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-4 leading-tight" style={{ fontFamily: 'var(--font-heading)', color: 'hsl(var(--foreground))' }}>
             {deal.title}
           </h1>
 
@@ -353,11 +357,13 @@ export default function DealDetailPage() {
           </div>
 
           {/* Description */}
-          {shortDescription && (
-            <div className="mt-4 pt-4 border-t border-border text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'hsl(var(--foreground))' }}>
-              {shortDescription}
+              {shortDescription && (
+                <div className="mt-5 pt-5 border-t border-border text-sm leading-7 whitespace-pre-wrap" style={{ color: 'hsl(var(--foreground))' }}>
+                  {shortDescription}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </motion.div>
 
                 {/* Photos & video */}
@@ -476,18 +482,18 @@ export default function DealDetailPage() {
                         style={{ width: isActive ? '100%' : '0%', background: 'hsl(var(--primary))' }} />
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {s === 'new' ? 'Score ≥ 50 → Popular' : s === 'popular' ? 'Score ≥ 150 → Front Page' : '🎉 Made it!'}
+                      {s === 'new' ? 'Score â‰¥ 50 â†’ Popular' : s === 'popular' ? 'Score â‰¥ 150 â†’ Front Page' : 'ðŸŽ‰ Made it!'}
                     </div>
                   </div>
-                  {i < 2 && <div className="text-muted-foreground text-lg shrink-0">→</div>}
+                  {i < 2 && <div className="text-muted-foreground text-lg shrink-0">â†’</div>}
                 </div>
               );
             })}
           </div>
           <div className="mt-3 text-xs text-muted-foreground">
             Current score: <span className="font-bold text-primary">{deal.score}</span>
-            {deal.status === 'new' && ` · needs ${Math.max(0, 50 - deal.score)} more to reach Popular`}
-            {deal.status === 'popular' && ` · needs ${Math.max(0, 150 - deal.score)} more to reach Front Page`}
+            {deal.status === 'new' && ` Â· needs ${Math.max(0, 50 - deal.score)} more to reach Popular`}
+            {deal.status === 'popular' && ` Â· needs ${Math.max(0, 150 - deal.score)} more to reach Front Page`}
           </div>
         </div>
 

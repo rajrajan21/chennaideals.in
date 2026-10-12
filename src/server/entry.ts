@@ -25,6 +25,8 @@ import {
 import { loadIndexNowKey } from "./indexnow-key";
 import { isSystemHost } from "./seo-host";
 import { llmsTxtHandler } from "./llms-txt";
+import deals__id__media__post from "./api/deals/[id]/media/POST";
+import uploads__name__get from "./api/uploads/[name]/GET";
 
 export interface SsrRenderResult {
 	html: string;
@@ -106,6 +108,8 @@ app.get("/api/deals/:id", deals__id__get);
 app.post("/api/deals/:id/comments", deals__id__comments__post);
 app.post("/api/deals/:id/vote", deals__id__vote__post);
 app.get("/api/health", health__get);
+app.post("/api/deals/:id/media", deals__id__media__post);
+app.get("/api/uploads/:name", uploads__name__get);
 // </api-registrations>
 
 // Error middleware must be registered AFTER the routes it protects; Express

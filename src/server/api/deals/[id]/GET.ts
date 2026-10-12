@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { db } from '../../../db/client.js';
-import { deals, comments, votes } from '../../../db/schema.js';
+ import { deals, comments, votes, dealMedia } from '../../../db/schema.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { getAuth } from '../../../../lib/auth/auth.js';
 
@@ -32,7 +32,11 @@ export default async function handler(req: Request, res: Response) {
       if (v) userVote = v.value;
     }
 
-    res.json({ deal: { ...deal, viewCount: deal.viewCount + 1 }, comments: dealComments, userVote });
+          const media = await db.select().from(dealMedia)
+        .where(eq(dealMedia.dealId, id))
+        .orderBy(dealMedia.sortOrder);
+
+          res.json({ deal: { ...deal, viewCount: deal.viewCount + 1 }, comments: dealComments, userVote, media });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch deal', message: String(err) });
   }

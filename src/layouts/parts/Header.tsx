@@ -42,18 +42,18 @@ export default function Header() {
 
       {/* Main nav */}
       <div className="px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center gap-3">
+        <div className="max-w-[1600px] mx-auto w-full flex items-center gap-4">
              {/* Logo */}
           <Link to="/" className="shrink-0 flex items-center" aria-label="ChennaiDeals.in home">
             <img
               src="/logo.jpg"
               alt="ChennaiDeals.in - Best deals voted by you, Every rupee counts!"
-              className="h-14 w-auto rounded-lg bg-white shadow-sm"
+              className="h-14 md:h-16 w-auto rounded-xl bg-white shadow-md ring-1 ring-white/30"
             />
           </Link>
 
           {/* Search bar */}
-          <div className="flex-1 max-w-2xl relative">
+          <div className="flex-1 min-w-0 max-w-4xl relative">
             <div
               className="flex items-center bg-card rounded-lg overflow-hidden shadow-sm border-2"
               style={{ borderColor: 'hsl(var(--header-overlay-dark) / 0.1)' }}
@@ -83,15 +83,15 @@ export default function Header() {
 
           {/* Auth */}
           {user ? (
-            <div className="hidden md:flex items-center gap-2">
-              <span className="text-xs text-white opacity-80 max-w-24 truncate">{user.name || user.email}</span>
-              <button onClick={() => signOut()} className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold text-white opacity-80 hover:opacity-100 transition-opacity">
+            <div className="hidden md:flex items-center gap-3 ml-auto shrink-0">
+              <span className="text-sm font-semibold text-white max-w-36 truncate">{user.name || user.email}</span>
+              <button onClick={() => signOut()} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-white/10 hover:bg-white/20 ring-1 ring-white/20 transition-all">
                 <LogOut size={14} /> Sign out
               </button>
             </div>
           ) : (
-            <div className="hidden md:flex items-center gap-2">
-              <Link to="/login" className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-white opacity-90 hover:opacity-100 transition-opacity">
+            <div className="hidden md:flex items-center gap-3 ml-auto shrink-0">
+              <Link to="/login" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-white/10 hover:bg-white/20 ring-1 ring-white/20 transition-all">
                 <User size={14} /> Sign in
               </Link>
             </div>
