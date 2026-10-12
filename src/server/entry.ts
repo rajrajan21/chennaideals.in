@@ -26,6 +26,8 @@ import { loadIndexNowKey } from "./indexnow-key";
 import { isSystemHost } from "./seo-host";
 import { llmsTxtHandler } from "./llms-txt";
 import deals__id__media__post from "./api/deals/[id]/media/POST";
+import saved_deals__get from "./api/saved-deals/GET";
+import saved_deals__post from "./api/saved-deals/POST";
 import uploads__name__get from "./api/uploads/[name]/GET";
 
 export interface SsrRenderResult {
@@ -102,6 +104,8 @@ app.post("/api/auth/:action", auth__action__post);
 app.get("/api/auth/:action/:detail", auth__action__detail__get);
 app.post("/api/auth/:action/:detail", auth__action__detail__post);
 app.get("/api/deals", deals__get);
+app.get("/api/saved-deals", saved_deals__get);
+app.post("/api/saved-deals", saved_deals__post);
 app.post("/api/deals", deals__post);
 app.get("/api/deals/:id", deals__id__get);
    app.post("/api/deals/:id/note", deals__id__note__post);
