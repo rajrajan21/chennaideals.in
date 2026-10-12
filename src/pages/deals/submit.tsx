@@ -41,7 +41,7 @@ export default function SubmitDealPage() {
         body: JSON.stringify({
           ...form,
           description: form.longDetails.trim()
-            ? `${form.description.trim()}${form.description.trim() ? '\\n\\n' : ''}\\n\\n[DEAL_LONG_DETAILS]\\n${form.longDetails.trim()}`
+            ? `${form.description.trim()}${form.description.trim() ? '\n\n' : ''}\n\n[DEAL_LONG_DETAILS]\n${form.longDetails.trim()}`
             : form.description,
         }),
       });
