@@ -147,3 +147,16 @@ export const dealMedia = mysqlTable('deal_media', {
 }, (t) => [
   index('idx_media_deal').on(t.dealId),
 ]);
+ 
+// ── Deal alert preferences ────────────────────────────────────────────────────
+export const dealAlertPreferences = mysqlTable('deal_alert_preferences', {
+  id: int('id').primaryKey().autoincrement(),
+  userId: varchar('user_id', { length: 36 }).notNull().unique().references(() => user.id, { onDelete: 'cascade' }),
+  keywords: text('keywords'),
+  categories: text('categories'),
+  emailEnabled: boolean('email_enabled').notNull().default(true),
+  smsEnabled: boolean('sms_enabled').notNull().default(false),
+  phoneNumber: varchar('phone_number', { length: 32 }),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
+});
