@@ -44,7 +44,7 @@ const routeTree: RouteObject[] = [
   {
     element:
       import.meta.env.MODE === 'development' ? (
-        <AiroErrorBoundary captureGlobalErrors={false}>{rootElement}</AiroErrorBoundary>
+        <AiroErrorBoundary>{rootElement}</AiroErrorBoundary>
       ) : (
         rootElement
       ),
@@ -52,7 +52,7 @@ const routeTree: RouteObject[] = [
   },
 ];
 
-const router = createAiroBrowserRouter(routeTree, { notFoundRouteId: 'airo-not-found' });
+const router = createAiroBrowserRouter(routeTree);
 
 const _virtualPageState = { lastPath: null as string | null };
 router.subscribe((state) => {
