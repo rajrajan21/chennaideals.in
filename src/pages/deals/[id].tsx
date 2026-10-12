@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import { useSession } from '@/lib/auth/auth-client';
 import { deal_detail } from 'virtual:content';
 import VotePopup from '@/components/VotePopup';
-import { ChevronUp, ChevronDown, MessageSquare, Clock, Tag, ExternalLink, ArrowLeft, Send, Flame, Search, StickyNote, Bookmark, Share2, Copy, Check } from 'lucide-react';
+import { ChevronUp, ChevronDown, MessageSquare, Clock, Tag, ExternalLink, ArrowLeft, Send, Flame, Search, StickyNote, Bookmark, Share2, Check } from 'lucide-react';
 import MediaGallery from '@/components/MediaGallery';
 import MediaPicker from '@/components/MediaPicker';
 import { uploadDealMedia, type MediaItem } from '@/lib/media';
