@@ -101,7 +101,7 @@ export default function HomePage() {
   const fetchDeals = async (tab: FeedTab, cat: string, ret: string) => {
     setFeedLoading(true);
     try {
-      const params = new URLSearchParams({ status: tab });
+      const params = new URLSearchParams({ status: searchQuery ? 'all' : tab });
       if (cat !== 'All') params.set('category', cat);
       if (ret !== 'All') params.set('retailer', ret);
       if (searchQuery) params.set('q', searchQuery);
