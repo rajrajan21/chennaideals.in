@@ -106,16 +106,21 @@ export function getAuth() {
 
     emailAndPassword: { enabled: true },
 
-    // socialProviders: {
-    //   google: {
-    //     clientId: getSecret('GOOGLE_CLIENT_ID') as string,
-    //     clientSecret: getSecret('GOOGLE_CLIENT_SECRET') as string,
-    //   },
-    //   github: {
-    //     clientId: getSecret('GITHUB_CLIENT_ID') as string,
-    //     clientSecret: getSecret('GITHUB_CLIENT_SECRET') as string,
-    //   },
-    // },
+    // Enable providers only when their credentials are configured.
+    socialProviders: {
+      ...(getSecret('GOOGLE_CLIENT_ID') && getSecret('GOOGLE_CLIENT_SECRET') ? {
+        google: {
+          clientId: getSecret('GOOGLE_CLIENT_ID') as string,
+          clientSecret: getSecret('GOOGLE_CLIENT_SECRET') as string,
+        },
+      } : {}),
+      ...(getSecret('FACEBOOK_CLIENT_ID') && getSecret('FACEBOOK_CLIENT_SECRET') ? {
+        facebook: {
+          clientId: getSecret('FACEBOOK_CLIENT_ID') as string,
+          clientSecret: getSecret('FACEBOOK_CLIENT_SECRET') as string,
+        },
+      } : {}),
+    },
   });
 
   _auth = auth as unknown as ReturnType<typeof betterAuth>;
