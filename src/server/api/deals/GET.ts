@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { db } from '../../db/client.js';
 import { deals } from '../../db/schema.js';
-import { eq, desc, asc, and, like, sql, inArray } from 'drizzle-orm';
+import { eq, desc, asc, and, like, sql, inArray, or } from 'drizzle-orm';
 
 // Promotion thresholds
 const POPULAR_THRESHOLD = 50;
@@ -44,7 +44,12 @@ export default async function handler(req: Request, res: Response) {
     if (category && category !== 'All') conditions.push(eq(deals.category, category));
     if (retailer && retailer !== 'All') conditions.push(eq(deals.retailer, retailer));
     if (area && area !== 'All') conditions.push(eq(deals.area, area));
-    if (q) conditions.push(like(deals.title, `%${q}%`));
+    if (q) conditions.push(or(
+      like(deals.title, `%${q}%`),
+      like(deals.description, `%${q}%`),
+      like(deals.retailer, `%${q}%`),
+      like(deals.category, `%${q}%`),
+    )!);
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
