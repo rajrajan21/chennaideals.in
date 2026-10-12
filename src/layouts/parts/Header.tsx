@@ -87,6 +87,7 @@ export default function Header() {
           {/* Auth */}
           {user ? (
             <div className="hidden md:flex items-center gap-3 ml-auto shrink-0">
+              <Link to="/alerts" className="text-sm font-semibold text-white hover:underline">Deal alerts</Link>
               <span className="text-sm font-semibold text-white max-w-36 truncate">{user.name || user.email}</span>
               <button onClick={() => signOut()} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-white/10 hover:bg-white/20 ring-1 ring-white/20 transition-all">
                 <LogOut size={14} /> Sign out
@@ -166,6 +167,7 @@ export default function Header() {
       {mobileOpen && (
         <div className="md:hidden bg-card border-t border-border">
           <div className="p-4 space-y-3">
+            {user && <Link to="/alerts" onClick={() => setMobileOpen(false)} className="block rounded-lg border border-border px-4 py-3 text-sm font-semibold text-foreground">Deal alerts</Link>}
             <Link
               to="/submit-deal"
               className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-bold bg-secondary text-secondary-foreground"
