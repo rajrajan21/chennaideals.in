@@ -81,7 +81,7 @@ export default function DealDetailPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [id]);
+  }, [id, user]);
 
   const handleVote = async (value: 1 | -1) => {
     if (!user) { window.location.href = '/login'; return; }
