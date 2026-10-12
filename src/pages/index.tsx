@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router';
 import { Link } from 'react-router';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion, AnimatePresence } from 'motion/react';
@@ -84,6 +85,8 @@ const retailerCardColors: Record<string, { bg: string; text: string; icon: strin
 export default function HomePage() {
   const countdown = useCountdown(7);
   const { user } = useSession();
+  const location = useLocation();
+  const searchQuery = new URLSearchParams(location.search).get('q')?.trim() || '';
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeRetailer, setActiveRetailer] = useState('All');
@@ -101,6 +104,7 @@ export default function HomePage() {
       const params = new URLSearchParams({ status: tab });
       if (cat !== 'All') params.set('category', cat);
       if (ret !== 'All') params.set('retailer', ret);
+      if (searchQuery) params.set('q', searchQuery);
       const res = await fetch(`/api/deals?${params}`);
       const data = await res.json();
       setLiveDeals(data.deals || []);
@@ -110,7 +114,7 @@ export default function HomePage() {
     }
   };
 
-  useEffect(() => { fetchDeals(activeTab, activeCategory, activeRetailer); }, [activeTab, activeCategory, activeRetailer]);
+  useEffect(() => { fetchDeals(activeTab, activeCategory, activeRetailer); }, [activeTab, activeCategory, activeRetailer, searchQuery]);
 
   const handleVote = async (dealId: number, value: 1 | -1) => {
     if (!user) { window.location.href = '/login'; return; }
