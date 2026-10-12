@@ -68,7 +68,13 @@ export default function DealDetailPage() {
       .then(r => r.json())
       .then(data => {
         setDeal(data.deal);
-        try { setIsSaved((JSON.parse(localStorage.getItem('saved-deals') || '[]') as number[]).includes(Number(data.deal?.id))); } catch { /* ignore */ }
+        if (data.deal?.id && user) {
+          fetch('/api/saved-deals').then(r => r.ok ? r.json() : null)
+            .then(savedData => setIsSaved(Boolean(savedData?.savedDealIds?.includes(Number(data.deal.id)))))
+            .catch(() => setIsSaved(false));
+        } else {
+          try { setIsSaved((JSON.parse(localStorage.getItem('saved-deals') || '[]') as number[]).includes(Number(data.deal?.id))); } catch { /* ignore */ }
+        }
         setComments(data.comments || []);
         setUserVote(data.userVote || 0);
                 setMedia(data.media || []);
@@ -112,15 +118,30 @@ export default function DealDetailPage() {
     } finally { setSubmittingComment(false); }
   };
 
-  const toggleSavedDeal = () => {
+  const toggleSavedDeal = async () => {
     if (!deal) return;
+    if (user) {
+      try {
+        const res = await fetch('/api/saved-deals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dealId: deal.id, action: isSaved ? 'remove' : 'save' }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setShareNotice(data.error || 'Could not update saved deal.'); return; }
+        setIsSaved(Boolean(data.saved));
+        setShareNotice(data.saved ? 'Deal saved to your account.' : 'Removed from your saved deals.');
+        window.setTimeout(() => setShareNotice(''), 2500);
+      } catch { setShareNotice('Could not save this deal. Please try again.'); }
+      return;
+    }
     try {
       const saved = JSON.parse(localStorage.getItem('saved-deals') || '[]') as number[];
       const next = isSaved ? saved.filter((dealId) => dealId !== deal.id) : [...new Set([...saved, deal.id])];
       localStorage.setItem('saved-deals', JSON.stringify(next));
       setIsSaved(!isSaved);
-      setShareNotice(isSaved ? 'Removed from your saved deals.' : 'Deal saved in this browser.');
-      window.setTimeout(() => setShareNotice(''), 2500);
+      setShareNotice(isSaved ? 'Removed from your saved deals.' : 'Deal saved in this browser. Sign in to sync saves across devices.');
+      window.setTimeout(() => setShareNotice(''), 3000);
     } catch { setShareNotice('Could not save this deal in this browser.'); }
   };
   const shareDeal = async () => {
