@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router';
 import { Search, Plus, Menu, X, MapPin, User, LogOut, ChevronDown } from 'lucide-react';
 import { useSession, signOut } from '@/lib/auth/auth-client';
 
@@ -33,6 +33,9 @@ export default function Header() {
   const [selectedArea, setSelectedArea] = useState('All Chennai');
   const [areaOpen, setAreaOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
+  useEffect(() => { setSearchQuery(new URLSearchParams(location.search).get('q') || ''); }, [location.search]);
   const { user } = useSession();
 
   return (
@@ -54,7 +57,7 @@ export default function Header() {
 
           {/* Search bar */}
           <div className="flex-1 min-w-0 max-w-4xl relative">
-            <div
+            <form onSubmit={(e) => { e.preventDefault(); const query = searchQuery.trim(); navigate(query ? `/?q=${encodeURIComponent(query)}` : '/'); }}
               className="flex items-center bg-card rounded-lg overflow-hidden shadow-sm border-2"
               style={{ borderColor: 'hsl(var(--header-overlay-dark) / 0.1)' }}
             >
@@ -66,10 +69,10 @@ export default function Header() {
                 placeholder="Search deals, products, stores in Chennai..."
                 className="flex-1 px-3 py-2.5 text-sm outline-none bg-transparent text-foreground"
               />
-              <button className="px-4 py-2.5 text-sm font-semibold text-secondary-foreground bg-secondary shrink-0">
+              <button type="submit" className="px-4 py-2.5 text-sm font-semibold text-secondary-foreground bg-secondary shrink-0">
                 Search
               </button>
-            </div>
+            </form>
           </div>
 
           {/* Submit Deal CTA */}
