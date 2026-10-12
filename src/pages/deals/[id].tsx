@@ -138,7 +138,7 @@ export default function DealDetailPage() {
   };
 
   if (loading) return (
-    <main className="max-w-3xl mx-auto px-4 py-12">
+    <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="space-y-4">
         {[1,2,3].map(i => <div key={i} className="h-20 bg-muted rounded-xl animate-pulse" />)}
       </div>
@@ -146,13 +146,18 @@ export default function DealDetailPage() {
   );
 
   if (!deal) return (
-    <main className="max-w-3xl mx-auto px-4 py-20 text-center">
+    <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
       <p className="text-muted-foreground text-lg">Deal not found.</p>
       <Link to="/" className="mt-4 inline-block text-primary hover:underline">← Back to deals</Link>
     </main>
   );
 
   const badge = statusBadge[deal.status] ?? statusBadge.new;
+  const rawDescription = deal.description || '';
+  const longDetailsMarker = '\n\n[DEAL_LONG_DETAILS]\n';
+  const longDetailsIndex = rawDescription.indexOf(longDetailsMarker);
+  const shortDescription = longDetailsIndex >= 0 ? rawDescription.slice(0, longDetailsIndex).trim() : rawDescription;
+  const longDetails = longDetailsIndex >= 0 ? rawDescription.slice(longDetailsIndex + longDetailsMarker.length).trim() : '';
 
     const q = commentQuery.trim().toLowerCase();
   const filteredComments = q
@@ -166,7 +171,7 @@ export default function DealDetailPage() {
         <meta name="description" content={deal.description?.slice(0, 160) ?? deal_detail.meta.description} />
       </Helmet>
 
-      <main className="max-w-3xl mx-auto px-4 py-6">
+      <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary mb-5 transition-colors">
           <ArrowLeft size={14} /> <span>{deal_detail.labels.backLink}</span>
         </Link>
@@ -254,12 +259,19 @@ export default function DealDetailPage() {
           </div>
 
           {/* Description */}
-          {deal.description && (
-            <div className="mt-4 pt-4 border-t border-border text-sm leading-relaxed" style={{ color: 'hsl(var(--foreground))' }}>
-              {deal.description}
+          {shortDescription && (
+            <div className="mt-4 pt-4 border-t border-border text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'hsl(var(--foreground))' }}>
+              {shortDescription}
             </div>
           )}
         </motion.div>
+
+        {longDetails && (
+          <section className="bg-card rounded-2xl border border-border p-5 mb-6">
+            <h2 className="text-base sm:text-lg font-bold mb-3">Deal Long Details</h2>
+            <div className="text-sm leading-7 whitespace-pre-wrap break-words" style={{ color: 'hsl(var(--foreground))' }}>{longDetails}</div>
+          </section>
+        )}
 
         {/* Editor's Notes */}
         {(deal.editorNote || isAdmin) && (
