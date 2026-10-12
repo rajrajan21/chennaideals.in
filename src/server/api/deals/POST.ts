@@ -3,6 +3,7 @@ import { db } from '../../db/client.js';
 import { deals } from '../../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { getAuth } from '../../../lib/auth/auth.js';
+import { notifyDealAlertSubscribers } from '../../lib/deal-alerts.js';
 
 export default async function handler(req: Request, res: Response) {
   try {
@@ -47,6 +48,7 @@ export default async function handler(req: Request, res: Response) {
     const insertId = Number(result[0].insertId);
     const [newDeal] = await db.select().from(deals).where(eq(deals.id, insertId)).limit(1);
 
+    void notifyDealAlertSubscribers(newDeal).catch((error) => console.error('deal-alert.delivery-failed', error));
     res.status(201).json(newDeal);
   } catch (err) {
     res.status(500).json({ error: 'Failed to submit deal', message: String(err) });
