@@ -28,6 +28,8 @@ import { llmsTxtHandler } from "./llms-txt";
 import deals__id__media__post from "./api/deals/[id]/media/POST";
 import saved_deals__get from "./api/saved-deals/GET";
 import saved_deals__post from "./api/saved-deals/POST";
+import alerts__get from "./api/alerts/GET";
+import alerts__post from "./api/alerts/POST";
 import uploads__name__get from "./api/uploads/[name]/GET";
 
 export interface SsrRenderResult {
@@ -106,6 +108,8 @@ app.post("/api/auth/:action/:detail", auth__action__detail__post);
 app.get("/api/deals", deals__get);
 app.get("/api/saved-deals", saved_deals__get);
 app.post("/api/saved-deals", saved_deals__post);
+app.get("/api/alerts", alerts__get);
+app.post("/api/alerts", alerts__post);
 app.post("/api/deals", deals__post);
 app.get("/api/deals/:id", deals__id__get);
    app.post("/api/deals/:id/note", deals__id__note__post);
