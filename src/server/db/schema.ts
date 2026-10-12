@@ -65,6 +65,7 @@ export const deals = mysqlTable('deals', {
   description: text('description'),
   url: text('url'),                                   // external deal link
   imageUrl: text('image_url'),
+      editorNote: text('editor_note'),
   originalPrice: decimal('original_price', { precision: 10, scale: 2 }),
   salePrice: decimal('sale_price', { precision: 10, scale: 2 }),
   savingsPercent: int('savings_percent'),

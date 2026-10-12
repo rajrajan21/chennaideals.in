@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion } from 'motion/react';
-import { ChevronUp, ChevronDown, MessageSquare, Clock, Tag, ExternalLink, ArrowLeft, Send, Flame } from 'lucide-react';
 import { useSession } from '@/lib/auth/auth-client';
 import { deal_detail } from 'virtual:content';
+import VotePopup from '@/components/VotePopup';
+import { ChevronUp, ChevronDown, MessageSquare, Clock, Tag, ExternalLink, ArrowLeft, Send, Flame, Search, StickyNote } from 'lucide-react';
 
 interface Deal {
   id: number; title: string; description: string | null; url: string | null;
@@ -12,7 +13,7 @@ interface Deal {
   retailer: string | null; category: string | null; area: string | null;
   status: string; score: number; upvotes: number; downvotes: number;
   commentCount: number; viewCount: number; submittedByName: string | null;
-  createdAt: string; isHot?: boolean;
+    createdAt: string; isHot?: boolean; editorNote?: string | null;
 }
 
 interface Comment {
@@ -37,7 +38,22 @@ export default function DealDetailPage() {
   const [commentBody, setCommentBody] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [voting, setVoting] = useState(false);
+  const [showVotePopup, setShowVotePopup] = useState(false);
 
+  useEffect(() => {
+    if (!deal || userVote !== 0) return;
+    const key = `vote-popup-seen:${deal.id}`;
+    try { if (localStorage.getItem(key)) return; } catch { /* ignore */ }
+    const t = setTimeout(() => setShowVotePopup(true), 1500);
+    return () => clearTimeout(t);
+  }, [deal?.id, userVote]);
+
+  const closeVotePopup = () => {
+    setShowVotePopup(false);
+    if (deal) {
+      try { localStorage.setItem(`vote-popup-seen:${deal.id}`, '1'); } catch { /* ignore */ }
+    }
+  };
   useEffect(() => {
     if (!id) return;
     fetch(`/api/deals/${id}`)
@@ -85,7 +101,33 @@ export default function DealDetailPage() {
       }
     } finally { setSubmittingComment(false); }
   };
+  const isAdmin = Boolean((user as { isAdmin?: boolean } | null)?.isAdmin);
+  const [editingNote, setEditingNote] = useState(false);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
+  const [noteError, setNoteError] = useState('');
+  const [commentQuery, setCommentQuery] = useState('');
 
+  const saveNote = async () => {
+    if (savingNote) return;
+    setSavingNote(true);
+    setNoteError('');
+    try {
+      const res = await fetch(`/api/deals/${id}/note`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note: noteDraft }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setNoteError(data.error || 'Could not save note'); return; }
+      setDeal(prev => (prev ? { ...prev, editorNote: data.deal.editorNote } : prev));
+      setEditingNote(false);
+    } catch {
+      setNoteError('Network error. Please try again.');
+    } finally {
+      setSavingNote(false);
+    }
+  };
   const fmt = (v: string | null) => v ? `₹${parseFloat(v).toLocaleString('en-IN')}` : null;
   const timeAgo = (d: string) => {
     const diff = Date.now() - new Date(d).getTime();
@@ -111,6 +153,11 @@ export default function DealDetailPage() {
   );
 
   const badge = statusBadge[deal.status] ?? statusBadge.new;
+
+    const q = commentQuery.trim().toLowerCase();
+  const filteredComments = q
+    ? comments.filter(c => c.body.toLowerCase().includes(q) || (c.userName ?? '').toLowerCase().includes(q))
+    : comments;
 
   return (
     <>
@@ -214,6 +261,51 @@ export default function DealDetailPage() {
           )}
         </motion.div>
 
+        {/* Editor's Notes */}
+        {(deal.editorNote || isAdmin) && (
+          <div className="bg-card rounded-xl border border-border p-4 mb-6" style={{ borderLeft: '4px solid hsl(var(--primary))' }}>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-1.5">
+                <StickyNote size={14} /> Editor&apos;s Notes
+              </h3>
+              {isAdmin && !editingNote && (
+                <button
+                  onClick={() => { setNoteDraft(deal.editorNote ?? ''); setNoteError(''); setEditingNote(true); }}
+                  className="text-xs font-semibold text-primary hover:underline">
+                  {deal.editorNote ? 'Edit' : 'Add note'}
+                </button>
+              )}
+            </div>
+
+            {editingNote ? (
+              <div>
+                <textarea
+                  value={noteDraft}
+                  onChange={e => setNoteDraft(e.target.value)}
+                  rows={4}
+                  maxLength={5000}
+                  placeholder="Add your verdict, tips, or things to check before buying..."
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm resize-none outline-none focus:ring-2 focus:ring-primary/30"
+                  style={{ color: 'hsl(var(--foreground))' }}
+                />
+                {noteError && <p className="text-xs mt-1" style={{ color: 'hsl(var(--destructive))' }}>{noteError}</p>}
+                <div className="flex justify-end gap-2 mt-2">
+                  <button onClick={() => setEditingNote(false)} className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted">Cancel</button>
+                  <button onClick={saveNote} disabled={savingNote}
+                    className="px-4 py-1.5 rounded-lg text-sm font-semibold disabled:opacity-50"
+                    style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
+                    {savingNote ? 'Saving...' : 'Save note'}
+                  </button>
+                </div>
+              </div>
+            ) : deal.editorNote ? (
+              <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'hsl(var(--foreground))' }}>{deal.editorNote}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">No note yet.</p>
+            )}
+          </div>
+        )}
+
         {/* Promotion progress bar */}
         <div className="bg-card rounded-xl border border-border p-4 mb-6">
           <h3 className="text-xs font-bold uppercase tracking-widest mb-3 text-primary">Deal Lifecycle</h3>
@@ -283,12 +375,29 @@ export default function DealDetailPage() {
             </div>
           )}
 
+          {comments.length > 0 && (
+            <div className="relative mb-4">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                value={commentQuery}
+                onChange={e => setCommentQuery(e.target.value)}
+                placeholder="Search comments..."
+                className="w-full rounded-xl border border-border bg-background pl-9 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                style={{ color: 'hsl(var(--foreground))' }}
+              />
+            </div>
+          )}
+
           {/* Comment list */}
           <div className="space-y-4">
             {comments.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-6">No comments yet. Be the first!</p>
             )}
-            {comments.map(c => (
+                        {comments.length > 0 && filteredComments.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">No comments match your search.</p>
+            )}
+                     {filteredComments.map(c => (
               <motion.div key={c.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                   style={{ background: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}>
@@ -306,6 +415,15 @@ export default function DealDetailPage() {
           </div>
         </div>
       </main>
+              <VotePopup
+          open={showVotePopup}
+          onClose={closeVotePopup}
+          upvotes={deal.upvotes}
+          downvotes={deal.downvotes}
+          userVote={userVote}
+          voting={voting}
+          onVote={async (v) => { await handleVote(v); closeVotePopup(); }}
+        />
     </>
   );
 }
