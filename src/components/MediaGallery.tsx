@@ -5,10 +5,12 @@ export default function MediaGallery({
   media,
   primaryUrl,
   onSetPrimary,
+  showVideo = true,
 }: {
   media: MediaItem[];
   primaryUrl?: string | null;
   onSetPrimary?: (url: string) => void;
+  showVideo?: boolean;
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const [viewUrl, setViewUrl] = useState<string | null>(primaryUrl || null);
@@ -70,7 +72,7 @@ export default function MediaGallery({
         </div>
       )}
 
-      {video && (
+      {showVideo && video && (
         <video src={video.url} controls preload="metadata" aria-label="Deal video"
           className="w-full max-h-96 rounded-xl bg-black" />
       )}
