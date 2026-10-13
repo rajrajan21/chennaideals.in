@@ -30,7 +30,7 @@ export default function VotePopup({
             role="dialog"
             aria-modal="true"
             aria-labelledby="vote-popup-title"
-            className="relative w-full max-w-sm rounded-2xl bg-card border border-border p-6 text-center shadow-xl"
+            className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-border bg-card p-6 text-center shadow-2xl"
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
@@ -44,17 +44,23 @@ export default function VotePopup({
               <X size={18} />
             </button>
 
-            <img src="/logo.jpg" alt="ChennaiDeals.in" className="h-12 w-auto mx-auto mb-4 rounded-lg" />
+            <img src="/logo.jpg" alt="ChennaiDeals.in" className="mx-auto mb-4 h-11 w-auto rounded-lg" />
 
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <ThumbsUp size={28} />
+            </div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">
+              Help Chennai shop smarter
+            </p>
             <h2
               id="vote-popup-title"
-              className="text-xl font-bold mb-1"
+              className="mb-2 text-2xl font-bold"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
-              Is this a good deal?
+              Worth the deal?
             </h2>
-            <p className="text-sm text-muted-foreground mb-5">
-              Cast your vote to help other shoppers.
+            <p className="mb-5 text-sm leading-relaxed text-muted-foreground">
+              Your quick vote helps the community spot great offers and avoid disappointing ones.
             </p>
 
             <div className="flex gap-3 justify-center">

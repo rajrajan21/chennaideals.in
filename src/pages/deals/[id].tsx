@@ -27,13 +27,15 @@ interface Comment {
 
 const statusBadge: Record<string, { label: string; color: string }> = {
   new: { label: 'New', color: 'hsl(var(--muted-foreground))' },
-  popular: { label: 'ðŸ”¥ Popular', color: 'hsl(var(--deal-hot))' },
-  frontpage: { label: 'â­ Front Page', color: 'hsl(var(--deal-score-positive))' },
+  popular: { label: 'Popular', color: 'hsl(var(--deal-hot))' },
+  frontpage: { label: 'Front Page', color: 'hsl(var(--deal-score-positive))' },
+  expired: { label: 'Expired', color: 'hsl(var(--muted-foreground))' },
+  rejected: { label: 'Rejected', color: 'hsl(var(--destructive))' },
 };
 
 export default function DealDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useSession();
+  const { user, isPending: sessionPending } = useSession();
 
   const [deal, setDeal] = useState<Deal | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -49,12 +51,23 @@ export default function DealDetailPage() {
 
 
   useEffect(() => {
-    if (!deal || userVote !== 0) return;
+    // Do not interrupt the author with a voting prompt on their own submission.
+    // Wait for auth to settle so a slow session lookup cannot show the prompt to the author.
+    if (!deal || sessionPending || userVote !== 0) {
+      setShowVotePopup(false);
+      return;
+    }
+    const currentUserId = (user as { id?: string } | null)?.id;
+    if (currentUserId && deal.submittedBy && currentUserId === deal.submittedBy) {
+      setShowVotePopup(false);
+      return;
+    }
     const key = `vote-popup-seen:${deal.id}`;
     try { if (localStorage.getItem(key)) return; } catch { /* ignore */ }
-    const t = setTimeout(() => setShowVotePopup(true), 1500);
+    // Only show after the visitor has remained on this deal page for 15 seconds.
+    const t = setTimeout(() => setShowVotePopup(true), 15000);
     return () => clearTimeout(t);
-  }, [deal?.id, userVote]);
+  }, [deal?.id, deal?.submittedBy, user?.id, sessionPending, userVote]);
 
   const closeVotePopup = () => {
     setShowVotePopup(false);
@@ -227,7 +240,17 @@ export default function DealDetailPage() {
       setSavingNote(false);
     }
   };
-  const fmt = (v: string | null) => v ? `â‚¹${parseFloat(v).toLocaleString('en-IN')}` : null;
+  const fmt = (v: string | null) => {
+    if (v == null || v.trim() === '') return null;
+    const amount = Number(v);
+    if (!Number.isFinite(amount)) return null;
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
   const timeAgo = (d: string) => {
     const diff = Date.now() - new Date(d).getTime();
     const h = Math.floor(diff / 3600000);
@@ -247,7 +270,7 @@ export default function DealDetailPage() {
   if (!deal) return (
     <main className="max-w-3xl mx-auto px-4 py-20 text-center">
       <p className="text-muted-foreground text-lg">Deal not found.</p>
-      <Link to="/" className="mt-4 inline-block text-primary hover:underline">â† Back to deals</Link>
+      <Link to="/" className="mt-4 inline-block text-primary hover:underline">← Back to deals</Link>
     </main>
   );
 
@@ -264,7 +287,7 @@ export default function DealDetailPage() {
   return (
     <>
       <Helmet>
-        <title>{deal.title} â€” ChennaiDeals.in</title>
+        <title>{deal.title} — ChennaiDeals.in</title>
         <meta name="description" content={deal.description?.slice(0, 160) ?? deal_detail.meta.description} />
       </Helmet>
 
