@@ -15,7 +15,7 @@ export default function SubmitDealPage() {
   const { user } = useSession();
 
   const [form, setForm] = useState({
-    title: '', description: '', url: '',
+    title: '', description: '', longDetails: '', url: '',
     originalPrice: '', salePrice: '',
     retailer: '', category: '', area: 'Chennai (All)',
   });
@@ -38,7 +38,12 @@ export default function SubmitDealPage() {
       const res = await fetch('/api/deals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          description: form.longDetails.trim()
+            ? `${form.description.trim()}${form.description.trim() ? '\n\n' : ''}\n\n[DEAL_LONG_DETAILS]\n${form.longDetails.trim()}`
+            : form.description,
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Submission failed'); return; }
@@ -176,6 +181,18 @@ export default function SubmitDealPage() {
               <textarea value={form.description} onChange={set('description')} rows={4}
                 placeholder={submit_deal.placeholders.description}
                 className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm resize-none outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                style={{ color: 'hsl(var(--foreground))' }} />
+            </div>
+
+            {/* Long deal details */}
+            <div>
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: 'hsl(var(--foreground))' }}>
+                Deal Long Details <span className="text-xs font-normal text-muted-foreground">(optional)</span>
+              </label>
+              <p className="text-xs text-muted-foreground mb-2">Add specifications, coupon codes, offer conditions, delivery details, limitations, or why this is a good deal.</p>
+              <textarea value={form.longDetails} onChange={set('longDetails')} rows={6}
+                placeholder="Key features, coupon code, offer conditions, delivery or warranty details"
+                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm resize-y outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                 style={{ color: 'hsl(var(--foreground))' }} />
             </div>
 

@@ -12,31 +12,12 @@ const SubmitDealPage = lazy(() => import('./pages/deals/submit'));
 const AuthPage = lazy(() => import('./pages/auth/AuthPage'));
 
 export const routes: RouteObject[] = [
-  {
-    path: '/',
-    element: <HomePage />,
-  },
-  {
-    path: '/deals/:id',
-    element: <DealDetailPage />,
-  },
-  {
-    path: '/deals/submit',
-    element: <SubmitDealPage />,
-  },
-  {
-    path: '/login',
-    element: <AuthPage mode="login" />,
-  },
-  {
-    path: '/signup',
-    element: <AuthPage mode="signup" />,
-  },
-  {
-    id: 'airo-not-found',
-    path: '*',
-    element: <NotFoundPage />,
-  },
+  { path: '/', element: <HomePage /> },
+  { path: '/deals/:id', element: <DealDetailPage /> },
+  { path: '/deals/submit', element: <SubmitDealPage /> },
+  { path: '/login', element: <AuthPage mode="login" providers={["google", "facebook"]} /> },
+  { path: '/signup', element: <AuthPage mode="signup" providers={["google", "facebook"]} /> },
+  { id: 'airo-not-found', path: '*', element: <NotFoundPage /> },
 ];
 
 export type Path = '/' | '/deals/:id' | '/deals/submit' | '/login' | '/signup';

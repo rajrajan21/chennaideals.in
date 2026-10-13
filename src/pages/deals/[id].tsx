@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router';
+import { useParams, Link, useLocation } from 'react-router';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { motion } from 'motion/react';
 import { useSession } from '@/lib/auth/auth-client';
 import { deal_detail } from 'virtual:content';
 import VotePopup from '@/components/VotePopup';
-import { ChevronUp, ChevronDown, MessageSquare, Clock, Tag, ExternalLink, ArrowLeft, Send, Flame, Search, StickyNote } from 'lucide-react';
+import { ChevronUp, ChevronDown, MessageSquare, Clock, Tag, ExternalLink, ArrowLeft, Send, Flame, Search, StickyNote, Bookmark, Share2, Copy, Check } from 'lucide-react';
+import MediaGallery from '@/components/MediaGallery';
+import MediaPicker from '@/components/MediaPicker';
+import { uploadDealMedia, type MediaItem } from '@/lib/media';
 
 interface Deal {
   id: number; title: string; description: string | null; url: string | null;
@@ -13,7 +16,8 @@ interface Deal {
   retailer: string | null; category: string | null; area: string | null;
   status: string; score: number; upvotes: number; downvotes: number;
   commentCount: number; viewCount: number; submittedByName: string | null;
-    createdAt: string; isHot?: boolean; editorNote?: string | null;
+    createdAt: string; isHot?: boolean; editorNote?: string | null; submittedBy?: string | null;
+  imageUrl?: string | null;
 }
 
 interface Comment {
@@ -39,6 +43,10 @@ export default function DealDetailPage() {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [voting, setVoting] = useState(false);
   const [showVotePopup, setShowVotePopup] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [shareNotice, setShareNotice] = useState('');
+  const [copiedLink, setCopiedLink] = useState(false);
+
 
   useEffect(() => {
     if (!deal || userVote !== 0) return;
@@ -60,8 +68,10 @@ export default function DealDetailPage() {
       .then(r => r.json())
       .then(data => {
         setDeal(data.deal);
+        try { setIsSaved((JSON.parse(localStorage.getItem('saved-deals') || '[]') as number[]).includes(Number(data.deal?.id))); } catch { /* ignore */ }
         setComments(data.comments || []);
         setUserVote(data.userVote || 0);
+                setMedia(data.media || []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -101,12 +111,80 @@ export default function DealDetailPage() {
       }
     } finally { setSubmittingComment(false); }
   };
+
+  const toggleSavedDeal = () => {
+    if (!deal) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem('saved-deals') || '[]') as number[];
+      const next = isSaved ? saved.filter((dealId) => dealId !== deal.id) : [...new Set([...saved, deal.id])];
+      localStorage.setItem('saved-deals', JSON.stringify(next));
+      setIsSaved(!isSaved);
+      setShareNotice(isSaved ? 'Removed from your saved deals.' : 'Deal saved in this browser.');
+      window.setTimeout(() => setShareNotice(''), 2500);
+    } catch { setShareNotice('Could not save this deal in this browser.'); }
+  };
+  const shareDeal = async () => {
+    if (!deal) return;
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: deal.title, text: `Check out this deal on ChennaiDeals.in: ${deal.title}`, url });
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setCopiedLink(true);
+        setShareNotice('Deal link copied. You can paste it into WhatsApp, email, or social media.');
+        window.setTimeout(() => { setCopiedLink(false); setShareNotice(''); }, 3000);
+      } else {
+        window.prompt('Copy this deal link:', url);
+      }
+    } catch (error) {
+      if ((error as Error)?.name !== 'AbortError') setShareNotice('Sharing was not available. You can copy the page URL from your browser.');
+    }
+  };
+  const rawDescription = deal?.description || '';
+  const longDetailsMarker = '\n\n[DEAL_LONG_DETAILS]\n';
+  const longDetailsIndex = rawDescription.indexOf(longDetailsMarker);
+  const shortDescription = longDetailsIndex >= 0 ? rawDescription.slice(0, longDetailsIndex).trim() : rawDescription;
+  const longDetails = longDetailsIndex >= 0 ? rawDescription.slice(longDetailsIndex + longDetailsMarker.length).trim() : '';
   const isAdmin = Boolean((user as { isAdmin?: boolean } | null)?.isAdmin);
   const [editingNote, setEditingNote] = useState(false);
   const [noteDraft, setNoteDraft] = useState('');
   const [savingNote, setSavingNote] = useState(false);
   const [noteError, setNoteError] = useState('');
   const [commentQuery, setCommentQuery] = useState('');
+    const location = useLocation();
+  const uploadNotice = (location.state as { uploadError?: string } | null)?.uploadError;
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [newImages, setNewImages] = useState<File[]>([]);
+  const [primaryImageIndex, setPrimaryImageIndex] = useState(0);
+  const [newVideo, setNewVideo] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [mediaError, setMediaError] = useState('');
+
+  const handleUploadMedia = async () => {
+    if (uploading || (newImages.length === 0 && !newVideo)) return;
+    setUploading(true);
+    setMediaError('');
+    const up = await uploadDealMedia(id!, newImages, newVideo, primaryImageIndex);
+    if (up.ok) {
+      if (up.media) setMedia(up.media);
+      setNewImages([]);
+      setNewVideo(null);
+    } else {
+      setMediaError(up.error);
+    }
+    setUploading(false);
+  };
+
+  const setPrimaryImage = async (url: string) => {
+    if (!deal || !canAddMedia || url === deal.imageUrl) return;
+    setMediaError('');
+    setUploading(true);
+    const up = await uploadDealMedia(id!, [], null, 0, url);
+    if (up.ok) setDeal({ ...deal, imageUrl: url });
+    else setMediaError(up.error);
+    setUploading(false);
+  };
 
   const saveNote = async () => {
     if (savingNote) return;
@@ -153,6 +231,8 @@ export default function DealDetailPage() {
   );
 
   const badge = statusBadge[deal.status] ?? statusBadge.new;
+    const myId = (user as { id?: string } | null)?.id;
+  const canAddMedia = Boolean(myId) && (isAdmin || deal.submittedBy === myId);
 
     const q = commentQuery.trim().toLowerCase();
   const filteredComments = q
@@ -191,9 +271,28 @@ export default function DealDetailPage() {
             )}
           </div>
 
+          {deal.imageUrl && (
+            <img src={deal.imageUrl} alt={deal.title} className="mb-4 max-h-[28rem] w-full rounded-xl object-contain bg-muted" />
+          )}
+
           <h1 className="text-xl font-bold mb-4 leading-snug" style={{ fontFamily: 'var(--font-heading)', color: 'hsl(var(--foreground))' }}>
             {deal.title}
           </h1>
+
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <button type="button" onClick={toggleSavedDeal}
+              className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted transition-colors"
+              aria-pressed={isSaved}>
+              <Bookmark size={16} fill={isSaved ? 'currentColor' : 'none'} />
+              {isSaved ? 'Saved' : 'Save deal'}
+            </button>
+            <button type="button" onClick={shareDeal}
+              className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted transition-colors">
+              {copiedLink ? <Check size={16} /> : <Share2 size={16} />}
+              Share deal
+            </button>
+            {shareNotice && <span role="status" className="text-xs text-muted-foreground">{shareNotice}</span>}
+          </div>
 
           {/* Price + vote row */}
           <div className="flex items-center gap-4 mb-4">
@@ -254,12 +353,51 @@ export default function DealDetailPage() {
           </div>
 
           {/* Description */}
-          {deal.description && (
-            <div className="mt-4 pt-4 border-t border-border text-sm leading-relaxed" style={{ color: 'hsl(var(--foreground))' }}>
-              {deal.description}
+          {shortDescription && (
+            <div className="mt-4 pt-4 border-t border-border text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'hsl(var(--foreground))' }}>
+              {shortDescription}
             </div>
           )}
         </motion.div>
+
+                {/* Photos & video */}
+        {(media.length > 0 || canAddMedia || uploadNotice) && (
+          <div className="bg-card rounded-xl border border-border p-4 mb-6">
+            <h3 className="text-xs font-bold uppercase tracking-widest mb-3 text-primary">Photos &amp; Video</h3>
+
+            {uploadNotice && (
+              <p className="text-sm mb-3" style={{ color: 'hsl(var(--destructive))' }}>
+                Your deal was posted, but the upload failed: {uploadNotice}. You can try again below.
+              </p>
+            )}
+
+            <MediaGallery media={media} primaryUrl={deal.imageUrl} onSetPrimary={canAddMedia ? setPrimaryImage : undefined} />
+
+            {canAddMedia && (
+              <div className={media.length > 0 ? 'mt-4 pt-4 border-t border-border' : ''}>
+                <MediaPicker
+                  images={newImages} video={newVideo}
+                  onImages={(next) => { setNewImages(next); setPrimaryImageIndex((current) => Math.min(current, Math.max(0, next.length - 1))); }} onVideo={setNewVideo}
+                  primaryIndex={primaryImageIndex} onPrimaryIndex={setPrimaryImageIndex}
+                  canVideo={isAdmin}
+                  existingImages={media.filter((m) => m.type === 'image').length}
+                  hasExistingVideo={media.some((m) => m.type === 'video')}
+                  disabled={uploading} onError={setMediaError}
+                />
+                {mediaError && (
+                  <p className="text-xs mt-2" style={{ color: 'hsl(var(--destructive))' }}>{mediaError}</p>
+                )}
+                {(newImages.length > 0 || newVideo) && (
+                  <button type="button" onClick={handleUploadMedia} disabled={uploading}
+                    className="mt-3 px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
+                    style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
+                    {uploading ? 'Uploading...' : 'Upload'}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Editor's Notes */}
         {(deal.editorNote || isAdmin) && (
@@ -304,6 +442,15 @@ export default function DealDetailPage() {
               <p className="text-sm text-muted-foreground">No note yet.</p>
             )}
           </div>
+        )}
+
+        {longDetails && (
+          <section className="bg-card rounded-2xl border border-border p-5 mb-6">
+            <h2 className="text-base sm:text-lg font-bold mb-3 flex items-center gap-2" style={{ fontFamily: 'var(--font-heading)' }}>
+              <StickyNote size={18} className="text-primary" /> Deal details
+            </h2>
+            <div className="text-sm leading-7 whitespace-pre-wrap break-words" style={{ color: 'hsl(var(--foreground))' }}>{longDetails}</div>
+          </section>
         )}
 
         {/* Promotion progress bar */}
