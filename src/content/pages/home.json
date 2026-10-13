@@ -1,0 +1,201 @@
+{
+  "dealOfTheDay": {
+    "title": "Samsung Galaxy S24 FE 5G (128GB) — Lowest Price Ever!",
+    "originalPrice": "₹54,999",
+    "salePrice": "₹34,999",
+    "savings": "Save ₹20,000 · 36% off",
+    "retailer": "Flipkart",
+    "area": "Online",
+    "badge": "Deal of the Day",
+    "ctaLabel": "Get This Deal",
+    "expiresLabel": "Expires in"
+  },
+  "trendingTicker": [
+    {
+      "id": "t1",
+      "text": "🔥 Nilgiris T. Nagar — Buy 2 Get 1 Free on all dairy products"
+    },
+    {
+      "id": "t2",
+      "text": "🔥 Amazon — boAt Rockerz 450 Bluetooth Headphones at ₹899"
+    },
+    {
+      "id": "t3",
+      "text": "🔥 Saravana Stores Anna Nagar — Flat 40% off on cotton sarees"
+    },
+    {
+      "id": "t4",
+      "text": "🔥 Flipkart — Redmi Note 13 5G at ₹12,999 (₹5,000 off)"
+    },
+    {
+      "id": "t5",
+      "text": "🔥 Meesho — Kurta sets from ₹199 with free delivery"
+    },
+    {
+      "id": "t6",
+      "text": "🔥 Velachery Phoenix Mall — Lifestyle flat 50% off on footwear"
+    }
+  ],
+  "deals": [
+    {
+      "id": "d1",
+      "title": "boAt Airdopes 141 TWS Earbuds — Active Noise Cancellation",
+      "originalPrice": "₹2,999",
+      "salePrice": "₹799",
+      "savings": "Save ₹2,200 · 73% off",
+      "retailer": "Amazon",
+      "area": "Online",
+      "score": 342,
+      "comments": 47,
+      "timeAgo": "2 hrs ago",
+      "isHot": true,
+      "category": "Electronics"
+    },
+    {
+      "id": "d2",
+      "title": "Nilgiris Fresh Vegetables Combo Pack (2kg assorted) — T. Nagar Store",
+      "originalPrice": "₹180",
+      "salePrice": "₹99",
+      "savings": "Save ₹81 · 45% off",
+      "retailer": "Local Store",
+      "area": "T. Nagar",
+      "score": 218,
+      "comments": 31,
+      "timeAgo": "4 hrs ago",
+      "isHot": true,
+      "category": "Groceries"
+    },
+    {
+      "id": "d3",
+      "title": "Redmi Note 13 5G (6GB/128GB) — Midnight Black",
+      "originalPrice": "₹17,999",
+      "salePrice": "₹12,999",
+      "savings": "Save ₹5,000 · 28% off",
+      "retailer": "Flipkart",
+      "area": "Online",
+      "score": 189,
+      "comments": 62,
+      "timeAgo": "6 hrs ago",
+      "isHot": false,
+      "category": "Mobile Phones"
+    },
+    {
+      "id": "d4",
+      "title": "Saravana Stores — Pure Cotton Salwar Kameez Set (3-piece)",
+      "originalPrice": "₹1,200",
+      "salePrice": "₹599",
+      "savings": "Save ₹601 · 50% off",
+      "retailer": "Local Store",
+      "area": "Anna Nagar",
+      "score": 156,
+      "comments": 28,
+      "timeAgo": "8 hrs ago",
+      "isHot": false,
+      "category": "Fashion"
+    },
+    {
+      "id": "d5",
+      "title": "Prestige Iris 750W Mixer Grinder (3 Jars) — 5 Year Warranty",
+      "originalPrice": "₹4,495",
+      "salePrice": "₹2,299",
+      "savings": "Save ₹2,196 · 49% off",
+      "retailer": "Amazon",
+      "area": "Online",
+      "score": 134,
+      "comments": 19,
+      "timeAgo": "10 hrs ago",
+      "isHot": false,
+      "category": "Home & Kitchen"
+    },
+    {
+      "id": "d6",
+      "title": "Adyar Ananda Bhavan — Combo Meal for 2 at ₹199 (Dine-in)",
+      "originalPrice": "₹380",
+      "salePrice": "₹199",
+      "savings": "Save ₹181 · 48% off",
+      "retailer": "Local Store",
+      "area": "Adyar",
+      "score": 97,
+      "comments": 14,
+      "timeAgo": "12 hrs ago",
+      "isHot": false,
+      "category": "Restaurants"
+    }
+  ],
+  "areas": [
+    {
+      "id": "a1",
+      "name": "T. Nagar",
+      "dealCount": 47,
+      "emoji": "🛍️"
+    },
+    {
+      "id": "a2",
+      "name": "Anna Nagar",
+      "dealCount": 38,
+      "emoji": "🏪"
+    },
+    {
+      "id": "a3",
+      "name": "Velachery",
+      "dealCount": 29,
+      "emoji": "🏬"
+    },
+    {
+      "id": "a4",
+      "name": "Adyar",
+      "dealCount": 24,
+      "emoji": "🍽️"
+    },
+    {
+      "id": "a5",
+      "name": "OMR",
+      "dealCount": 31,
+      "emoji": "💻"
+    },
+    {
+      "id": "a6",
+      "name": "Porur",
+      "dealCount": 18,
+      "emoji": "🛒"
+    },
+    {
+      "id": "a7",
+      "name": "Tambaram",
+      "dealCount": 22,
+      "emoji": "🏷️"
+    },
+    {
+      "id": "a8",
+      "name": "Nungambakkam",
+      "dealCount": 15,
+      "emoji": "✨"
+    }
+  ],
+  "retailers": [
+    {
+      "id": "r1",
+      "name": "Flipkart",
+      "dealCount": 124,
+      "colorClass": "flipkart"
+    },
+    {
+      "id": "r2",
+      "name": "Amazon",
+      "dealCount": 98,
+      "colorClass": "amazon"
+    },
+    {
+      "id": "r3",
+      "name": "Meesho",
+      "dealCount": 67,
+      "colorClass": "meesho"
+    },
+    {
+      "id": "r4",
+      "name": "Local Stores",
+      "dealCount": 89,
+      "colorClass": "local"
+    }
+  ]
+}

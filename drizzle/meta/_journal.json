@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1791171649062,
+      "tag": "0000_eager_bedlam",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1791763200000,
+      "tag": "0001_deal_alert_preferences",
+      "breakpoints": true
+    }
+  ]
+}
