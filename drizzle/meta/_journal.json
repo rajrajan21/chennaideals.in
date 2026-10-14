@@ -15,6 +15,13 @@
       "when": 1791763200000,
       "tag": "0001_deal_alert_preferences",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1791859282477,
+      "tag": "0002_verification_value_text",
+      "breakpoints": true
     }
   ]
 }

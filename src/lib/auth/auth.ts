@@ -43,6 +43,12 @@ export function getAuth() {
   }
 
   const auth = betterAuth({
+    account: {
+  accountLinking: {
+    enabled: true,
+    trustedProviders: ["facebook", "google"],
+  },
+},
     // Schema passed explicitly — avoids BetterAuth's runtime schema inference.
     database: drizzleAdapter(db, {
       provider: 'mysql',

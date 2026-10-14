@@ -15,3 +15,6 @@ backups/
 *.log
 Thumbs.db
 .DS_Store
+
+# Local database backups - never commit
+database-backups/

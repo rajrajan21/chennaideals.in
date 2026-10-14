@@ -48,7 +48,7 @@ export const account = mysqlTable('account', {
 export const verification = mysqlTable('verification', {
   id: varchar('id', { length: 36 }).primaryKey(),
   identifier: varchar('identifier', { length: 255 }).notNull(),
-  value: varchar('value', { length: 255 }).notNull(),
+  value: text('value').notNull(),
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
