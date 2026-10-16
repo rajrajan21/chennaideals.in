@@ -18,3 +18,16 @@ Thumbs.db
 
 # Local database backups - never commit
 database-backups/
+
+# --- added by Sync-To-GitHub: never upload these ---
+config.json
+uploads/
+.update-backups/
+migration-diagnostic-backup-*/
+*.backup-*
+*.bak-*
+*.zip
+*-report.txt
+drizzle-check-report.txt
+ChennaiDeals-Update-Pack-*/
+chennaideals-local-snapshot.zip

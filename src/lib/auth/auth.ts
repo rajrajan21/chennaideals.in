@@ -18,24 +18,82 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { db } from '@/server/db/client';
 import { user, session, account, verification } from '@/server/db/schema';
 import { getSecret } from '#airo/secrets';
+import { sendResendEmail } from '@/lib/email/resend';
 
-// Lazy singleton — betterAuth() must NOT run at module init time.
+// Lazy singleton - betterAuth() must NOT run at module init time.
 //
 // The BETTER_AUTH_SECRET is loaded from the alloc config at runtime, so the
 // auth instance must be constructed after the secrets are available (i.e. on
 // the first HTTP request, not at import time).
 //
-// Pattern mirrors how db/client.ts defers the actual MySQL connection — the
+// Pattern mirrors how db/client.ts defers the actual MySQL connection - the
 // pool object is safe to create at init, but anything that reads schema state
 // or secrets must be deferred to request time.
 let _auth: ReturnType<typeof betterAuth> | null = null;
+
+// Origin used for links inside emails: only ever a host we already trust.
+function trustedSiteOrigin(request?: Request): string {
+  const fallback = 'https://chennaideals.in';
+  try {
+    const origin = request?.headers.get('origin');
+    if (!origin) return fallback;
+    const host = new URL(origin).hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host === 'chennaideals.in' || host === 'www.chennaideals.in') {
+      return origin;
+    }
+  } catch {
+    /* fall through */
+  }
+  return fallback;
+}
+
+// Better Auth deliberately answers sign-up with the SAME success response whether or not the
+// email already has an account (so strangers cannot probe which emails are registered).
+// To still help a real owner who tries to sign up again, we email the address itself.
+const emailAndPasswordConfig = {
+  enabled: true,
+  requireEmailVerification: true,
+  resetPasswordTokenExpiresIn: 60 * 60,
+  sendResetPassword: async ({ user: u, url }: { user: { email: string; name?: string | null }; url: string }) => {
+    // Same rule as the other emails: log the reason, never crash, never tell the browser.
+    try {
+      await sendResendEmail({
+        to: u.email,
+        subject: 'Reset your ChennaiDeals.in password',
+        text: `Hi${u.name ? ' ' + u.name : ''},\n\nWe received a request to reset your ChennaiDeals.in password. Use this link (valid for 1 hour):\n${url}\n\nIf you did not ask for this, you can ignore this email - your password stays the same.`,
+        html: `<div style="font-family:Arial,sans-serif;line-height:1.6;max-width:560px;margin:auto"><h2>Reset your password</h2><p>We received a request to reset your ChennaiDeals.in password.</p><p><a href="${url}" style="display:inline-block;padding:12px 20px;background:#ea580c;color:#fff;text-decoration:none;border-radius:8px">Choose a new password</a></p><p>This link expires in 1 hour. If you did not ask for this, you can ignore this email - your password stays the same.</p></div>`,
+      });
+    } catch (err) {
+      console.error('Password reset email could not be sent', { message: err instanceof Error ? err.message : String(err) });
+    }
+  },
+  onExistingUserSignUp: async (
+    { user: existing }: { user: { email: string; name?: string | null } },
+    request?: Request,
+  ) => {
+    try {
+      const base = trustedSiteOrigin(request);
+      const loginUrl = `${base}/login`;
+      const forgotUrl = `${base}/forgot-password`;
+      await sendResendEmail({
+        to: existing.email,
+        subject: 'You already have a ChennaiDeals.in account',
+        text: `Hi${existing.name ? ' ' + existing.name : ''},\n\nSomeone (hopefully you) tried to create a ChennaiDeals.in account with this email address, but an account already exists.\n\nSign in here: ${loginUrl}\n\nIf you have not verified your email yet, signing in will send you a fresh verification link.\n\nForgot your password? Reset it here: ${forgotUrl}\n\nIf this was not you, you can ignore this message - your account is unchanged.`,
+        html: `<div style="font-family:Arial,sans-serif;line-height:1.6;max-width:560px;margin:auto"><h2>You already have an account</h2><p>Someone (hopefully you) tried to create a ChennaiDeals.in account with this email address, but an account already exists.</p><p><a href="${loginUrl}" style="display:inline-block;padding:12px 20px;background:#ea580c;color:#fff;text-decoration:none;border-radius:8px">Sign in</a></p><p>If you have not verified your email yet, signing in will send you a fresh verification link.</p><p>Forgot your password? <a href="${forgotUrl}">Reset it here</a>.</p><p style="color:#666;font-size:13px">If this was not you, you can ignore this message - your account is unchanged.</p></div>`,
+      });
+    } catch (err) {
+      console.error('Existing-account notice email could not be sent', { message: err instanceof Error ? err.message : String(err) });
+    }
+  },
+};
+
 
 export function getAuth() {
   if (_auth) return _auth;
 
   const authSecret = getSecret('BETTER_AUTH_SECRET');
   if (!authSecret || typeof authSecret !== 'string') {
-    throw new Error('BETTER_AUTH_SECRET is not set or invalid — run requestSecrets() first');
+    throw new Error('BETTER_AUTH_SECRET is not set or invalid - run requestSecrets() first');
   }
 
   if (!db) {
@@ -49,7 +107,7 @@ export function getAuth() {
     trustedProviders: ["facebook", "google"],
   },
 },
-    // Schema passed explicitly — avoids BetterAuth's runtime schema inference.
+    // Schema passed explicitly - avoids BetterAuth's runtime schema inference.
     database: drizzleAdapter(db, {
       provider: 'mysql',
       schema: { user, session, account, verification },
@@ -113,7 +171,27 @@ export function getAuth() {
       },
     }),
 
-    emailAndPassword: { enabled: true },
+    emailVerification: {
+      sendOnSignUp: true,
+      sendOnSignIn: true,
+      expiresIn: 60 * 60,
+      sendVerificationEmail: async ({ user, url }) => {
+        // Never let a mail-provider problem crash the server or leak details to the browser.
+        // The reason is printed in the server terminal (look for "Resend email request failed").
+        try {
+          await sendResendEmail({
+            to: user.email,
+            subject: "Verify your ChennaiDeals.in email",
+            text: `Welcome to ChennaiDeals.in!\n\nVerify your email address using this link (valid for 1 hour):\n${url}\n\nIf you did not create this account, you can ignore this email.`,
+            html: `<div style="font-family:Arial,sans-serif;line-height:1.6;max-width:560px;margin:auto"><h2>Welcome to ChennaiDeals.in</h2><p>Please verify your email address to finish setting up your account.</p><p><a href="${url}" style="display:inline-block;padding:12px 20px;background:#ea580c;color:#fff;text-decoration:none;border-radius:8px">Verify email address</a></p><p>This link expires in 1 hour. If you did not create this account, you can ignore this email.</p></div>`,
+          });
+        } catch (err) {
+          console.error('Verification email could not be sent', { message: err instanceof Error ? err.message : String(err) });
+        }
+      },
+    },
+
+    emailAndPassword: emailAndPasswordConfig,
 
     // Enable providers only when their credentials are configured.
     socialProviders: {
@@ -138,3 +216,4 @@ export function getAuth() {
 
 export type Session = ReturnType<typeof getAuth>['$Infer']['Session'];
 export type User = ReturnType<typeof getAuth>['$Infer']['Session']['user'];
+

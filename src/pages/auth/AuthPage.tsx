@@ -11,21 +11,22 @@
  *
  * Preview/iframe note:
  *   In the Airo builder the app runs inside a cross-origin preview iframe. OAuth
- *   providers (Google, GitHub, …) send `X-Frame-Options: DENY`, so their consent
- *   screens CANNOT render in the frame — a redirect there just shows a 403. When
+ *   providers (Google, GitHub, ...) send `X-Frame-Options: DENY`, so their consent
+ *   screens CANNOT render in the frame - a redirect there just shows a 403. When
  *   we detect we're framed, social sign-in opens the app in a new top-level tab
  *   where the provider works normally. Published (standalone) apps aren't framed
  *   and sign in in place.
  */
 
-import { useState, FormEvent, ReactElement } from 'react';
+import { useState, useEffect, FormEvent, ReactElement } from 'react';
 import { Navigate, useNavigate, useLocation } from 'react-router';
-import { signIn, signUp, useSession } from '@/lib/auth/auth-client';
+import { authClient, signIn, signUp, useSession } from '@/lib/auth/auth-client';
 import { toSafeInternalPath } from '@/lib/auth/safe-redirect';
+import AuthShell from '@/components/AuthShell';
 
 /**
  * True when this window is embedded in another (the builder preview iframe).
- * A cross-origin parent makes `window.top` access throw — that also means framed.
+ * A cross-origin parent makes `window.top` access throw - that also means framed.
  */
 function isInIframe(): boolean {
   try {
@@ -107,7 +108,7 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
   //
   // SECURITY: `?from=` is attacker-controllable and flows into
   // `callbackURL: window.location.origin + from`, so it's validated to a same-site
-  // absolute path (see toSafeInternalPath — blocks open-redirect vectors like
+  // absolute path (see toSafeInternalPath - blocks open-redirect vectors like
   // `.evil.com`, `@evil.com`, `//evil.com`). Router-state `from` is always a real
   // pathname and isn't subject to the check.
   const searchFrom: string | null = toSafeInternalPath(new URLSearchParams(location.search).get('from'));
@@ -120,10 +121,33 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   // Shown when social sign-in is diverted to a new tab (preview iframe only).
   const [oauthNotice, setOauthNotice] = useState('');
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  // 'signup' = just submitted the sign-up form; 'login' = sign-in blocked by unverified email.
+  const [verificationContext, setVerificationContext] = useState<'signup' | 'login'>('signup');
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const showEmail = !!mode;
   const showOAuth = providers && providers.length > 0;
   const isLogin = mode === 'login';
+  // CHENNAIDEALS_AUTH_FORM_RESET
+  useEffect(() => {
+    setName('');
+    setEmail('');
+    setPassword('');
+    setError('');
+    setOauthNotice('');
+    setVerificationSent(false);
+    setVerificationEmail('');
+  }, [mode, location.pathname]);
+
+  // Counts down the pause between verification-email requests.
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = window.setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [resendCooldown]);
+
 
   // Password validation for signup
   function validatePassword(pwd: string): string | null {
@@ -138,30 +162,78 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
     return <Navigate to="/" replace />;
   }
 
+  async function handleResendVerification() {
+    const targetEmail = verificationEmail || email;
+    if (!targetEmail) {
+      setError('Enter your email address first.');
+      return;
+    }
+    if (resendCooldown > 0) return;
+
+    setLoading(true);
+    setError('');
+    try {
+      const result = await authClient.sendVerificationEmail({
+        email: targetEmail,
+        callbackURL: from || '/',
+      });
+      if (result.error) {
+        setError(result.error.message || 'Could not request the verification email. Please try again.');
+        return;
+      }
+      setVerificationEmail(targetEmail);
+      setVerificationSent(true);
+      setResendCooldown(60);
+      setOauthNotice('Request received. If this address still needs verification, a new link should arrive within a few minutes - please check your spam folder too.');
+    } catch {
+      setError('Could not request the verification email. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleEmailSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
+    setOauthNotice('');
+    setVerificationSent(false);
 
-    // Validate password on signup
     if (!isLogin) {
       const pwdError = validatePassword(password);
-      if (pwdError) {
-        setError(pwdError);
-        return;
-      }
+      if (pwdError) { setError(pwdError); return; }
     }
+
     setLoading(true);
     try {
       const result = isLogin
         ? await signIn.email({ email, password })
         : await signUp.email({ email, password, name: name || '' });
+
       if (result.error) {
-        setError(result.error.message || 'Authentication failed');
+        const message = result.error.message || 'Authentication failed';
+        if (isLogin && (result.error.status === 403 || result.error.code === 'EMAIL_NOT_VERIFIED' || /verif|confirm/i.test(message))) {
+          setError('Please verify your email before signing in. Check your inbox and spam folder, or request a new verification email below.');
+          setVerificationEmail(email);
+          setVerificationContext('login');
+          setVerificationSent(true);
+        } else {
+          setError(message);
+        }
         return;
       }
+      if (!isLogin) {
+        setVerificationEmail(email);
+        setVerificationContext('signup');
+        setVerificationSent(true);
+        setResendCooldown(60);
+  setError('');
+  setOauthNotice('');
+  return;
+}
+
       navigate(from, { replace: true });
     } catch {
-      setError('An error occurred.');
+      setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -172,7 +244,7 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
     setOauthNotice('');
 
     // Standalone (published site): not framed, so the provider consent screen can
-    // render — use BetterAuth's normal same-window redirect.
+    // render - use BetterAuth's normal same-window redirect.
     if (!isInIframe()) {
       setSocialLoading(provider);
       try {
@@ -194,13 +266,13 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
     const tabUrl: URL = new URL(window.location.href);
     tabUrl.searchParams.set('from', from);
     // `noopener` makes the return value unreliable (some browsers return null even
-    // on success), so we can't detect a blocked popup — word the notice defensively.
+    // on success), so we can't detect a blocked popup - word the notice defensively.
     window.open(tabUrl.toString(), '_blank', 'noopener,noreferrer');
     const providerName: string = PROVIDER_CONFIG[provider]?.name || provider;
     // Set expectations explicitly: (1) if no tab appeared, popups are blocked;
     // (2) the embedded preview can't share the new tab's session (partitioned
-    // cookies), so it stays signed-out — the logged-in experience lives in the tab.
-    setOauthNotice(`${providerName} sign-in opens in a new tab — finish there. If no tab opened, allow pop-ups for this site and try again. This embedded preview stays signed-out; use the new tab to see the logged-in app.`);
+    // cookies), so it stays signed-out - the logged-in experience lives in the tab.
+    setOauthNotice(`${providerName} sign-in opens in a new tab - finish there. If no tab opened, allow pop-ups for this site and try again. This embedded preview stays signed-out; use the new tab to see the logged-in app.`);
     // Re-enable shortly after so a legitimate retry (blocked popup, closed tab)
     // doesn't require a full page refresh. There's no in-window async to await here.
     window.setTimeout(() => setSocialLoading(null), 4000);
@@ -215,12 +287,10 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center mb-2">
-          {showEmail ? (isLogin ? 'Sign In' : 'Create Account') : 'Welcome'}
-        </h2>
-        {!showEmail && <p className="text-gray-600 text-center mb-6">Sign in to continue</p>}
+    <AuthShell
+      title={showEmail ? (isLogin ? 'Sign in to your account' : 'Create your account') : 'Welcome'}
+      subtitle={showEmail ? (isLogin ? 'Welcome back. Enter your details to continue.' : 'It takes a minute. Post deals, vote and comment.') : 'Sign in to continue'}
+    >
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
@@ -275,40 +345,89 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
         )}
 
         {/* Email/Password Form */}
-        {showEmail && (
+        {verificationSent && (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950" role="status">
+            {verificationContext === 'login' ? (
+              <>
+                <p className="font-semibold">Verify your email to sign in</p>
+                <p className="mt-1">This email address has not been verified yet. We asked our mail service to send you a fresh verification link. It can take a few minutes - please check your spam folder too.</p>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold">Request received - check your email</p>
+                <p className="mt-1">
+                  If <strong>{verificationEmail}</strong> is new to ChennaiDeals.in, a verification link should arrive within a few minutes (check spam too).
+                  If this address already has an account, we have emailed it with sign-in instructions instead.
+                  For security, this page cannot tell you which of the two applies.
+                </p>
+              </>
+            )}
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <a href="/login" className="rounded-md bg-blue-600 px-3 py-1.5 font-semibold text-white hover:bg-blue-700">Sign in</a>
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={loading || resendCooldown > 0}
+                className="font-semibold underline underline-offset-2 disabled:opacity-50 disabled:no-underline"
+              >
+                {loading ? 'Sending...' : resendCooldown > 0 ? `Resend verification email (${resendCooldown}s)` : 'Resend verification email'}
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-amber-900">Typed the wrong address? Correct it in the form and submit again.</p>
+          </div>
+        )}
+            {showEmail && (
           <>
             <form onSubmit={handleEmailSubmit} className="space-y-4">
               {!isLogin && (
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                   <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} disabled={loading}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100" placeholder="Your name" />
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:bg-gray-100" placeholder="Your name" />
                 </div>
               )}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100" placeholder="you@example.com" />
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:bg-gray-100" placeholder="you@example.com" />
               </div>
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={isLogin ? undefined : 8} disabled={loading}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100" placeholder={isLogin ? '••••••••' : 'Min 8 chars, A-Z, 0-9, special'} />
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:bg-gray-100" placeholder={isLogin ? '••••••••' : 'Min 8 chars, A-Z, 0-9, special'} />
+                {isLogin && (
+                  <p className="mt-1 text-right text-sm">
+                    <a href="/forgot-password" className="text-blue-600 hover:underline font-medium">Forgot password?</a>
+                  </p>
+                )}
                 {!isLogin && (
                   <p className="mt-1 text-xs text-gray-500">Must include uppercase, number, and special character</p>
                 )}
               </div>
               <button type="submit" disabled={loading || socialLoading !== null}
-                className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:opacity-50">
+                className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50">
                 {loading ? 'Loading...' : (isLogin ? 'Sign In' : 'Create Account')}
               </button>
             </form>
 
-            <p className="mt-4 text-center text-sm text-gray-600">
+            <p className="mt-6 border-t border-gray-100 pt-5 text-center text-sm text-gray-600">
               {isLogin ? "Don't have an account? " : 'Already have an account? '}
-              <a href={isLogin ? '/signup' : '/login'} className="text-blue-600 hover:underline font-medium">
-                {isLogin ? 'Sign up' : 'Sign in'}
-              </a>
+             
+<a
+  href={isLogin ? '/signup' : '/login'}
+  onClick={() => {
+    setName('');
+    setEmail('');
+    setPassword('');
+    setError('');
+    setOauthNotice('');
+    setVerificationSent(false);
+    setVerificationEmail('');
+  }}
+  className="font-semibold text-blue-600 hover:underline"
+>
+  {isLogin ? 'Create an account' : 'Sign in'}
+</a>
             </p>
           </>
         )}
@@ -318,7 +437,9 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
             By continuing, you agree to our Terms of Service and Privacy Policy.
           </p>
         )}
-      </div>
-    </div>
+    </AuthShell>
   );
 }
+
+
+

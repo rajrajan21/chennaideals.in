@@ -2,6 +2,7 @@ import {
   mysqlTable, int, varchar, text, boolean, timestamp, decimal, index
 } from 'drizzle-orm/mysql-core';
 
+
 // ── Auth tables (BetterAuth managed) ─────────────────────────────────────────
 export const user = mysqlTable('user', {
   id: varchar('id', { length: 36 }).primaryKey(),
@@ -160,3 +161,4 @@ export const dealAlertPreferences = mysqlTable('deal_alert_preferences', {
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
 });
+

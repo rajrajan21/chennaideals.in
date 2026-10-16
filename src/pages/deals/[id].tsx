@@ -244,12 +244,7 @@ export default function DealDetailPage() {
     if (v == null || v.trim() === '') return null;
     const amount = Number(v);
     if (!Number.isFinite(amount)) return null;
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 2,
-      minimumFractionDigits: 0,
-    }).format(amount);
+    return '\u20b9' + amount.toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 0 });
   };
   const timeAgo = (d: string) => {
     const diff = Date.now() - new Date(d).getTime();
@@ -531,18 +526,18 @@ export default function DealDetailPage() {
                         style={{ width: isActive ? '100%' : '0%', background: 'hsl(var(--primary))' }} />
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {s === 'new' ? 'Score â‰¥ 50 â†’ Popular' : s === 'popular' ? 'Score â‰¥ 150 â†’ Front Page' : 'ðŸŽ‰ Made it!'}
+                      {s === 'new' ? 'Score ≥ 50 → Popular' : s === 'popular' ? 'Score ≥ 150 → Front Page' : '🎉 Made it!'}
                     </div>
                   </div>
-                  {i < 2 && <div className="text-muted-foreground text-lg shrink-0">â†’</div>}
+                  {i < 2 && <div className="text-muted-foreground text-lg shrink-0">→</div>}
                 </div>
               );
             })}
           </div>
           <div className="mt-3 text-xs text-muted-foreground">
             Current score: <span className="font-bold text-primary">{deal.score}</span>
-            {deal.status === 'new' && ` Â· needs ${Math.max(0, 50 - deal.score)} more to reach Popular`}
-            {deal.status === 'popular' && ` Â· needs ${Math.max(0, 150 - deal.score)} more to reach Front Page`}
+            {deal.status === 'new' && ` · needs ${Math.max(0, 50 - deal.score)} more to reach Popular`}
+            {deal.status === 'popular' && ` · needs ${Math.max(0, 150 - deal.score)} more to reach Front Page`}
           </div>
         </div>
 

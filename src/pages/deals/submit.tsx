@@ -6,7 +6,9 @@ import { ArrowLeft, Send, Info } from 'lucide-react';
 import { useSession } from '@/lib/auth/auth-client';
 import { submit_deal } from 'virtual:content';
 import MediaPicker from '@/components/MediaPicker';
-import { uploadDealMedia } from '@/lib/media';
+import { uploadDealMedia, MAX_IMAGES } from '@/lib/media';
+import DealLinkAssist from '@/components/DealLinkAssist';
+import { importPulledImages, type DealDraft } from '@/lib/deal-link';
 
 const CATEGORIES = ['Electronics', 'Mobile Phones', 'Fashion', 'Groceries', 'Restaurants', 'Home & Kitchen', 'Travel', 'Beauty', 'Sports', 'Books', 'Toys', 'Other'];
 const RETAILERS = ['Flipkart', 'Amazon', 'Meesho', 'Myntra', 'Nykaa', 'BigBasket', 'Swiggy', 'Zomato', 'Local Store', 'Other'];
@@ -19,6 +21,8 @@ export default function SubmitDealPage() {
   const [images, setImages] = useState<File[]>([]);
   const [primaryImageIndex, setPrimaryImageIndex] = useState(0);
   const [video, setVideo] = useState<File | null>(null);
+  const [pulledTokens, setPulledTokens] = useState<string[]>([]);
+  const [prevForm, setPrevForm] = useState<Record<string, string> | null>(null);
 
   const [form, setForm] = useState({
     title: '', description: '', longDetails: '', url: '',
@@ -34,6 +38,25 @@ export default function SubmitDealPage() {
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
+
+  const applyDraft = (d: DealDraft) => {
+    setPrevForm({ ...form });
+    setForm((f) => ({
+      ...f,
+      title: d.title || f.title,
+      description: d.description || f.description,
+      longDetails: d.longDetails || f.longDetails,
+      originalPrice: d.originalPrice !== null ? String(d.originalPrice) : f.originalPrice,
+      salePrice: d.salePrice !== null ? String(d.salePrice) : f.salePrice,
+      retailer: RETAILERS.includes(d.retailer) ? d.retailer : 'Other',
+      category: CATEGORIES.includes(d.category) ? d.category : 'Other',
+    }));
+  };
+  const undoDraft = () => {
+    if (prevForm) setForm((f) => ({ ...f, ...prevForm }));
+    setPrevForm(null);
+  };
+  const hasTypedText = Boolean(form.title.trim() || form.description.trim() || form.longDetails.trim() || form.originalPrice || form.salePrice);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,8 +76,15 @@ export default function SubmitDealPage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Submission failed'); return; }
-           const up = await uploadDealMedia(data.id, images, video, primaryImageIndex);
-      navigate(`/deals/${data.id}`, up.ok ? undefined : { state: { uploadError: up.error } });
+      const up = await uploadDealMedia(data.id, images, video, primaryImageIndex);
+      let pullError = '';
+      if (pulledTokens.length > 0) {
+        const imp = await importPulledImages(data.id, pulledTokens);
+        if (!imp.ok) pullError = imp.error;
+        else if (imp.skipped > 0) pullError = `${imp.skipped} of the chosen pictures could not be added. You can add them again from the deal page.`;
+      }
+      const mediaError = !up.ok ? up.error : pullError;
+      navigate(`/deals/${data.id}`, mediaError ? { state: { uploadError: mediaError } } : undefined);
     } catch {
       setError('Network error. Please try again.');
     } finally {
@@ -101,6 +131,21 @@ export default function SubmitDealPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Deal link + autofill */}
+            <DealLinkAssist
+              url={form.url}
+              onUrl={(v) => setForm((f) => ({ ...f, url: v }))}
+              hasTypedText={hasTypedText}
+              onApplyDraft={applyDraft}
+              canUndo={prevForm !== null}
+              onUndo={undoDraft}
+              selected={pulledTokens}
+              onSelected={setPulledTokens}
+              maxSelectable={MAX_IMAGES - images.length}
+              disabled={submitting}
+              isAdmin={isAdmin}
+            />
+
             {/* Title */}
             <div>
               <label className="block text-sm font-semibold mb-1.5" style={{ color: 'hsl(var(--foreground))' }}>
@@ -173,14 +218,6 @@ export default function SubmitDealPage() {
               </select>
             </div>
 
-            {/* URL */}
-            <div>
-              <label className="block text-sm font-semibold mb-1.5" style={{ color: 'hsl(var(--foreground))' }}>{submit_deal.labels.url}</label>
-              <input value={form.url} onChange={set('url')} type="url"
-                placeholder={submit_deal.placeholders.url}
-                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-                style={{ color: 'hsl(var(--foreground))' }} />
-            </div>
 
             {/* Description */}
             <div>

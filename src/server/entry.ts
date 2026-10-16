@@ -31,6 +31,11 @@ import saved_deals__post from "./api/saved-deals/POST";
 import alerts__get from "./api/alerts/GET";
 import alerts__post from "./api/alerts/POST";
 import uploads__name__get from "./api/uploads/[name]/GET";
+import deals__fetch_images__post from "./api/deals/fetch-images/POST";
+import deals__id__media__import__post from "./api/deals/[id]/media/import/POST";
+import deals__fetch_details__post from "./api/deals/fetch-details/POST";
+import deals__fetch_image__post from "./api/deals/fetch-image/POST";
+import tmp_images__token__get from "./api/tmp-images/[token]/GET";
 
 export interface SsrRenderResult {
 	html: string;
@@ -118,6 +123,11 @@ app.post("/api/deals/:id/vote", deals__id__vote__post);
 app.get("/api/health", health__get);
 app.post("/api/deals/:id/media", deals__id__media__post);
 app.get("/api/uploads/:name", uploads__name__get);
+app.post("/api/deals/fetch-images", deals__fetch_images__post);
+app.post("/api/deals/:id/media/import", deals__id__media__import__post);
+app.post("/api/deals/fetch-details", deals__fetch_details__post);
+app.post("/api/deals/fetch-image", deals__fetch_image__post);
+app.get("/api/tmp-images/:token", tmp_images__token__get);
 // </api-registrations>
 
 // Error middleware must be registered AFTER the routes it protects; Express
