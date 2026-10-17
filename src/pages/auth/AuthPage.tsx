@@ -23,6 +23,7 @@ import { Navigate, useNavigate, useLocation } from 'react-router';
 import { authClient, signIn, signUp, useSession } from '@/lib/auth/auth-client';
 import { toSafeInternalPath } from '@/lib/auth/safe-redirect';
 import AuthShell from '@/components/AuthShell';
+import PhoneAuth from '@/components/PhoneAuth';
 
 /**
  * True when this window is embedded in another (the builder preview iframe).
@@ -40,7 +41,7 @@ const PROVIDER_CONFIG: Record<string, { name: string; icon: ReactElement; bg: st
   google: {
     name: 'Google',
     bg: 'bg-white border border-gray-300 text-gray-700',
-    hover: 'hover:bg-gray-50',
+    hover: 'hover:bg-background',
     icon: (
       <svg className="w-5 h-5" viewBox="0 0 24 24">
         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -126,6 +127,8 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
   // 'signup' = just submitted the sign-up form; 'login' = sign-in blocked by unverified email.
   const [verificationContext, setVerificationContext] = useState<'signup' | 'login'>('signup');
   const [resendCooldown, setResendCooldown] = useState(0);
+  // 'email' = email + password form; 'phone' = Indian mobile number with a code.
+  const [method, setMethod] = useState<'email' | 'phone'>('email');
 
   const showEmail = !!mode;
   const showOAuth = providers && providers.length > 0;
@@ -280,8 +283,8 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
 
   if (isPending) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
@@ -299,7 +302,7 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
         )}
 
         {oauthNotice && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-md text-sm">
+          <div className="mb-4 p-3 bg-muted border border-border text-foreground rounded-md text-sm">
             {oauthNotice}
           </div>
         )}
@@ -344,8 +347,24 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
           </div>
         )}
 
+        {/* Choose how to sign in */}
+        {showEmail && (
+          <div className="mb-5 grid grid-cols-2 rounded-lg bg-gray-100 p-1 text-sm font-semibold" role="tablist">
+            <button type="button" role="tab" aria-selected={method === 'email'} onClick={() => setMethod('email')}
+              className={`rounded-md px-3 py-2 transition-colors ${method === 'email' ? 'bg-card text-secondary shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
+              Email
+            </button>
+            <button type="button" role="tab" aria-selected={method === 'phone'} onClick={() => { setMethod('phone'); setError(''); }}
+              className={`rounded-md px-3 py-2 transition-colors ${method === 'phone' ? 'bg-card text-secondary shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
+              Mobile number
+            </button>
+          </div>
+        )}
+
+        {showEmail && method === 'phone' && <PhoneAuth from={from} />}
+
         {/* Email/Password Form */}
-        {verificationSent && (
+        {method === 'email' && verificationSent && (
           <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950" role="status">
             {verificationContext === 'login' ? (
               <>
@@ -363,7 +382,7 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
               </>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <a href="/login" className="rounded-md bg-blue-600 px-3 py-1.5 font-semibold text-white hover:bg-blue-700">Sign in</a>
+              <a href="/login" className="rounded-md bg-secondary px-3 py-1.5 font-semibold text-secondary-foreground hover:opacity-90">Sign in</a>
               <button
                 type="button"
                 onClick={handleResendVerification}
@@ -376,28 +395,28 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
             <p className="mt-2 text-xs text-amber-900">Typed the wrong address? Correct it in the form and submit again.</p>
           </div>
         )}
-            {showEmail && (
+            {showEmail && method === 'email' && (
           <>
             <form onSubmit={handleEmailSubmit} className="space-y-4">
               {!isLogin && (
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                   <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} disabled={loading}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:bg-gray-100" placeholder="Your name" />
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100" placeholder="Your name" />
                 </div>
               )}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:bg-gray-100" placeholder="you@example.com" />
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100" placeholder="you@example.com" />
               </div>
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={isLogin ? undefined : 8} disabled={loading}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:bg-gray-100" placeholder={isLogin ? '••••••••' : 'Min 8 chars, A-Z, 0-9, special'} />
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100" placeholder={isLogin ? '••••••••' : 'Min 8 chars, A-Z, 0-9, special'} />
                 {isLogin && (
                   <p className="mt-1 text-right text-sm">
-                    <a href="/forgot-password" className="text-blue-600 hover:underline font-medium">Forgot password?</a>
+                    <a href="/forgot-password" className="text-secondary hover:underline font-medium">Forgot password?</a>
                   </p>
                 )}
                 {!isLogin && (
@@ -405,7 +424,7 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
                 )}
               </div>
               <button type="submit" disabled={loading || socialLoading !== null}
-                className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50">
+                className="w-full rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50">
                 {loading ? 'Loading...' : (isLogin ? 'Sign In' : 'Create Account')}
               </button>
             </form>
@@ -424,7 +443,7 @@ export default function AuthPage({ mode, providers }: AuthPageProps) {
     setVerificationSent(false);
     setVerificationEmail('');
   }}
-  className="font-semibold text-blue-600 hover:underline"
+  className="font-semibold text-secondary hover:underline"
 >
   {isLogin ? 'Create an account' : 'Sign in'}
 </a>

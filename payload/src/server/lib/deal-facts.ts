@@ -12,7 +12,6 @@ export type ProductFacts = {
   siteName?: string;
   price?: number;
   mrp?: number;
-  mrpEstimated?: boolean;
   currency?: string;
   text: string;
   fromPage: boolean;
@@ -92,111 +91,6 @@ function offersOf(product: Json): Json[] {
   return flat;
 }
 
-
-const RUPEE = '\u20b9';
-const CUR = `(?:${RUPEE}|Rs\\.?|INR|&#8377;|&#x20b9;)`;
-const NUM = '([\\d,]+(?:\\.\\d+)?)';
-const MRP_KEYS = '(?:mrp|maximumRetailPrice|maxRetailPrice|listPrice|list_price|originalPrice|original_price|strikePrice|strike_price|strikethroughPrice|strikeThroughPrice|wasPrice|was_price|regularPrice|regular_price|compareAtPrice|compare_at_price|basePrice|priceBeforeDiscount|crossedPrice|markedPrice|marked_price|retailPrice|maxPrice|originalListPrice)';
-
-/** Every number the page presents as an "original" / struck-through price, best sources first. */
-export function mrpCandidates(html: string, text: string): number[] {
-  const out: number[] = [];
-  const push = (v: string | undefined) => { const n = parsePrice(v); if (n !== undefined) out.push(n); };
-  const scan = (html.length > 1_200_000 ? html.slice(0, 1_200_000) : html).replace(/&quot;/g, '"');
-  // Amazon-style struck price
-  for (const m of scan.matchAll(new RegExp(`a-text-price[^>]*>\\s*<span[^>]*a-offscreen[^>]*>\\s*${CUR}?\\s*${NUM}`, 'gi'))) push(m[1]);
-  for (const m of scan.matchAll(new RegExp(`class="basisPrice"[\\s\\S]{0,400}?a-offscreen[^>]*>\\s*${CUR}?\\s*${NUM}`, 'gi'))) push(m[1]);
-  // data attributes
-  for (const m of scan.matchAll(new RegExp(`data-(?:mrp|original-price|was-price|list-price|strike-price)\\s*=\\s*["']?${CUR}?\\s*${NUM}`, 'gi'))) push(m[1]);
-  // JSON embedded in the page, e.g. "mrp":4490 or "originalPrice":{"value":"4,490"}
-  for (const m of scan.matchAll(new RegExp(`"${MRP_KEYS}"\\s*:\\s*(?:"|\\{[^{}]{0,120}?"(?:value|amount|price|text|raw|displayValue)"\\s*:\\s*"?)?\\s*${CUR}?\\s*${NUM}`, 'gi'))) push(m[1]);
-  // struck-through markup
-  for (const m of scan.matchAll(new RegExp(`<(?:del|s|strike)\\b[^>]*>\\s*(?:<[^>]+>\\s*)*${CUR}?\\s*${NUM}`, 'gi'))) push(m[1]);
-  for (const m of scan.matchAll(new RegExp(`class="[^"]*(?:strike|line-through|old-price|was-price|price-old|mrp|original-price|price--compare|compare-at)[^"]*"[^>]*>\\s*(?:<[^>]+>\\s*)*${CUR}?\\s*${NUM}`, 'gi'))) push(m[1]);
-  // printed labels in the visible text
-  for (const m of text.matchAll(new RegExp(`(?:M\\.?R\\.?P\\.?)\\s*[:.\\-]?\\s*${CUR}?\\s*${NUM}`, 'gi'))) push(m[1]);
-  for (const m of text.matchAll(new RegExp(`(?:List Price|Original Price|Regular Price|Marked Price|Was)\\s*[:.\\-]?\\s*${CUR}\\s*${NUM}`, 'gi'))) push(m[1]);
-  return out;
-}
-
-/** Chooses the most plausible original price: higher than the price, matching a shown discount if there is one. */
-export function pickMrp(cands: number[], price: number, pctHint?: number): number | undefined {
-  const ok = cands.filter((c) => c > price * 1.02 && c <= price * 25);
-  if (ok.length === 0) return undefined;
-  if (pctHint !== undefined) {
-    const match = ok.find((c) => Math.abs(Math.round(((c - price) / c) * 100) - pctHint) <= 1);
-    if (match !== undefined) return match;
-  }
-  const counts = new Map<number, number>();
-  for (const c of ok) counts.set(c, (counts.get(c) ?? 0) + 1);
-  let best = ok[0];
-  let bestCount = 0;
-  for (const [v, n] of counts) if (n > bestCount) { best = v; bestCount = n; }
-  return best;
-}
-
-export function percentFromText(t: string): number | undefined {
-  const m = /(\d{1,2})\s*%\s*(?:off|discount)/i.exec(t) ?? /(?:save|discount of|flat)\s*(\d{1,2})\s*%/i.exec(t) ?? /-\s*(\d{1,2})\s*%/.exec(t);
-  const n = m ? Number(m[1]) : NaN;
-  return n >= 5 && n <= 90 ? n : undefined;
-}
-
-/** A discount percentage printed close to the price on the page (not anywhere in the page, to avoid other products). */
-export function percentNearPrice(text: string, price: number): number | undefined {
-  const forms = Array.from(new Set([price.toLocaleString('en-IN', { maximumFractionDigits: 2 }), price.toLocaleString('en-US', { maximumFractionDigits: 2 }), String(price)]));
-  for (const f of forms) {
-    const at = text.indexOf(f);
-    if (at < 0) continue;
-    const near = text.slice(Math.max(0, at - 200), at + 300);
-    const p = percentFromText(near);
-    if (p !== undefined) return p;
-  }
-  return undefined;
-}
-
-export function guessCurrency(html: string, pageUrl: string, hasPrice: boolean): string | undefined {
-  if (!hasPrice) return undefined;
-  try {
-    const host = new URL(pageUrl).hostname;
-    if (/\.in$|flipkart|myntra|meesho|nykaa|bigbasket|swiggy|zomato|ajio|tatacliq|croma|reliancedigital/i.test(host)) return 'INR';
-    if (/\.co\.uk$/i.test(host)) return 'GBP';
-    if (/\.(de|fr|it|es|nl)$/i.test(host)) return 'EUR';
-  } catch { /* keep guessing */ }
-  const sample = html.slice(0, 400_000);
-  if (sample.includes(RUPEE) || /&#8377;|&#x20b9;|\bRs\.?\s?\d/i.test(sample)) return 'INR';
-  if (/\$\s?\d/.test(sample)) return 'USD';
-  return 'INR';
-}
-
-/** Removes a price that the page title already ends with, so adding ours does not repeat it. */
-export function stripTrailingPrice(t: string): string {
-  let out = t.trim();
-  const re = new RegExp(`\\s*[-\\u2013\\u2014|@:,]?\\s*(?:(?:at|for|only|now|just|@)\\s+)?(?:[${RUPEE}$\\u00a3\\u20ac]|Rs\\.?|INR|USD)\\s?\\d[\\d,]*(?:\\.\\d+)?(?:\\s*\\([^)]*\\))?\\s*$`, 'i');
-  const pct = /\s*[-\u2013\u2014|@:,(]?\s*\d{1,2}\s*%\s*off\)?\s*$/i;
-  for (let i = 0; i < 3; i++) {
-    const next = out.replace(re, '').replace(pct, '').trim();
-    if (next === out || next.length < 8) break;
-    out = next;
-  }
-  return out;
-}
-
-/** "Product name - Rs. 1,299 (Original Rs. 4,490, 71% off)" - built from the real numbers only. */
-export function titleWithPrice(base: string, price?: number | null, mrp?: number | null, currency?: string, maxLen = 240): string {
-  const title = stripTrailingPrice(base);
-  if (price === undefined || price === null) return title;
-  let suffix = money(price, currency);
-  if (mrp !== undefined && mrp !== null && mrp > price) {
-    const pct = Math.round(((mrp - price) / mrp) * 100);
-    suffix += ` (Original ${money(mrp, currency)}${pct >= 1 ? `, ${pct}% off` : ''})`;
-  }
-  const sep = ' - ';
-  const room = maxLen - sep.length - suffix.length;
-  let t = title;
-  if (t.length > room) t = t.slice(0, Math.max(10, room)).replace(/\s+\S*$/, '').replace(/[\s,;:\-]+$/, '');
-  return `${t}${sep}${suffix}`;
-}
-
 export function extractProductFacts(html: string, pageUrl: string): ProductFacts {
   const facts: ProductFacts = { text: '', fromPage: html.length > 0 };
   if (!html) { facts.title = titleFromUrl(pageUrl); facts.fromPage = false; return facts; }
@@ -241,31 +135,22 @@ export function extractProductFacts(html: string, pageUrl: string): ProductFacts
     facts.price = parsePrice(mt?.[1] ?? mt?.[2]);
   }
 
-  if (facts.price === undefined) {
-    const mj = /"(?:sellingPrice|finalPrice|offerPrice|salePrice|discountedPrice|special_price)"\s*:\s*\{?\s*(?:"value"\s*:\s*)?"?(\d[\d,.]*)/i.exec(html);
-    facts.price = parsePrice(mj?.[1]);
-  }
-
   // 3. readable text (also used to look for a printed MRP)
   const body = html
     .replace(/<(script|style|noscript|svg|head)[\s\S]*?<\/\1>/gi, ' ')
     .replace(/<[^>]+>/g, ' ');
   facts.text = decode(body).replace(/\s+/g, ' ').trim().slice(0, 3500);
 
-  // original price (MRP): structured data first, then the many ways shops print it
-  if (facts.price !== undefined) {
-    const metaPct = percentFromText(`${facts.title ?? ''} ${facts.description ?? ''}`);
-    const pctHint = metaPct ?? percentNearPrice(facts.text, facts.price);
-    if (facts.mrp !== undefined && facts.mrp <= facts.price) facts.mrp = undefined;
-    if (facts.mrp === undefined) facts.mrp = pickMrp(mrpCandidates(html, facts.text), facts.price, pctHint);
-    if (facts.mrp === undefined && pctHint !== undefined && pctHint >= 5 && pctHint <= 90) {
-      facts.mrp = Math.round(facts.price / (1 - pctHint / 100));
-      facts.mrpEstimated = true;
-    }
-  } else {
-    facts.mrp = undefined;
+  if (facts.mrp === undefined) {
+    const mm = /(?:M\.?R\.?P\.?|List Price|Original Price|Was)\s*[:.]?\s*(?:₹|Rs\.?|INR)?\s*(\d[\d,]*(?:\.\d+)?)/i.exec(facts.text);
+    const v = parsePrice(mm?.[1]);
+    if (v !== undefined) facts.mrp = v;
   }
-  facts.currency ??= guessCurrency(html, pageUrl, facts.price !== undefined);
+  if (facts.mrp === undefined) {
+    const del = /<(?:del|s|strike)\b[^>]*>\s*(?:₹|Rs\.?|INR|&#8377;)?\s*([\d,]+(?:\.\d+)?)\s*<\/(?:del|s|strike)>/i.exec(html);
+    facts.mrp = parsePrice(del?.[1]);
+  }
+  if (facts.mrp !== undefined && facts.price !== undefined && facts.mrp <= facts.price) facts.mrp = undefined;
 
   if (facts.title) facts.title = cleanText(facts.title, 200);
   if (!facts.title) facts.title = titleFromUrl(pageUrl);
@@ -326,12 +211,9 @@ export function guessCategory(title: string, description = ''): string {
   return 'Other';
 }
 
-const SYMBOLS: Record<string, string> = { INR: '\u20b9', USD: '$', GBP: '\u00a3', EUR: '\u20ac' };
-
-export function money(n: number, currency?: string): string {
-  const code = (currency ?? 'INR').toUpperCase();
-  const sym = SYMBOLS[code] ?? `${code} `;
-  return sym + n.toLocaleString(code === 'INR' ? 'en-IN' : 'en-US', { maximumFractionDigits: 2 });
+function money(n: number, currency?: string): string {
+  const sym = !currency || currency === 'INR' ? '₹' : `${currency} `;
+  return sym + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 }
 
 export function priceLines(f: Pick<ProductFacts, 'price' | 'mrp' | 'currency'>): string[] {

@@ -7,6 +7,7 @@ import { deal_detail } from 'virtual:content';
 import VotePopup from '@/components/VotePopup';
 import { ChevronUp, ChevronDown, MessageSquare, Clock, Tag, ExternalLink, ArrowLeft, Send, Flame, Search, StickyNote, Bookmark, Share2, Check } from 'lucide-react';
 import MediaGallery from '@/components/MediaGallery';
+import DealActions from '@/components/DealActions';
 import MediaPicker from '@/components/MediaPicker';
 import { uploadDealMedia, type MediaItem } from '@/lib/media';
 
@@ -340,6 +341,7 @@ export default function DealDetailPage() {
               Share deal
             </button>
             {shareNotice && <span role="status" className="text-xs text-muted-foreground">{shareNotice}</span>}
+            <DealActions title={deal.title} />
           </div>
 
           {/* Price + vote row */}

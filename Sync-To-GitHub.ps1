@@ -29,7 +29,6 @@ $wanted = @(
   'database-backups/', 'migration-diagnostic-backup-*/', 'backup-*/', 'backups/',
   '*.backup-*', '*.bak-*', '*.zip', '*.log',
   '*-report.txt', 'drizzle-check-report.txt',
-  'ChennaiDeals-Update-Pack-*/', 'chennaideals-local-snapshot.zip',
   'Thumbs.db', '.DS_Store'
 )
 $existing = @()
@@ -65,11 +64,10 @@ if ($staged.Count -gt 0) {
   Write-Host ''
   Write-Host ("Files to save: " + $staged.Count)
   git diff --cached --stat | Select-Object -Last 25
-  if (-not $Message) { $Message = (Read-Host 'Short description of this save (press Enter for a default)').Trim() }
   if (-not $Message) { $Message = 'Sync local changes ' + (Get-Date -Format 'yyyy-MM-dd HH:mm') }
   $msg = $Message + "`n"
   if (-not $NoTrailer) {
-    $msg += "`nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`nClaude-Session: https://claude.ai/code/session_01GYaat52UuafjU1LffLi4sz`n"
+    $msg += "`nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`nClaude-Session: https://claude.ai/code/session_01VrdnmEyAnnSrba25mLEVGy`n"
   }
   # Written to a file because Windows PowerShell mangles quotes inside command-line arguments.
   $msgFile = Join-Path $env:TEMP ('commit-msg-' + [guid]::NewGuid().ToString('N') + '.txt')

@@ -14,17 +14,16 @@ export interface PulledImage {
   width: number | null;
   height: number | null;
   bytes: number;
-  index?: number;
 }
 
 export type DetailsResult =
-  | { ok: true; draft: DealDraft; notes: string[]; usedAI: boolean; aiConfigured: boolean; lookupId: string | null; candidateCount: number }
+  | { ok: true; draft: DealDraft; images: PulledImage[]; notes: string[]; usedAI: boolean; aiConfigured: boolean }
   | { ok: false; error: string };
 
-/** Step 1: reads the page and drafts the form (fast). Pictures are fetched one by one afterwards. */
+/** One request: reads the page, drafts the form, and saves the pictures (full size) on the server. */
 export async function fetchDealDetails(url: string): Promise<DetailsResult> {
   const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), 40_000);
+  const timer = window.setTimeout(() => controller.abort(), 90_000);
   try {
     const res = await fetch('/api/deals/fetch-details', {
       method: 'POST',
@@ -38,35 +37,15 @@ export async function fetchDealDetails(url: string): Promise<DetailsResult> {
     return {
       ok: true,
       draft: data.draft as DealDraft,
+      images: (data.images as PulledImage[]) ?? [],
       notes: (data.notes as string[]) ?? [],
       usedAI: Boolean(data.usedAI),
       aiConfigured: Boolean(data.aiConfigured),
-      lookupId: (data.lookupId as string | null) ?? null,
-      candidateCount: Number(data.candidateCount) || 0,
     };
   } catch {
     return { ok: false, error: 'The website took too long or the connection dropped. Please press the button again.' };
   } finally {
     window.clearTimeout(timer);
-  }
-}
-
-export type PictureResult = { ok: true; image: PulledImage | null } | { ok: false; expired: boolean };
-
-/** Step 2: downloads one picture (full size) into the server's temporary buffer. */
-export async function fetchPulledImage(lookupId: string, index: number): Promise<PictureResult> {
-  try {
-    const res = await fetch('/api/deals/fetch-image', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lookupId, index }),
-    });
-    if (res.status === 410) return { ok: false, expired: true };
-    if (!res.ok) return { ok: false, expired: false };
-    const data = (await res.json()) as { image?: PulledImage | null };
-    return { ok: true, image: data.image ?? null };
-  } catch {
-    return { ok: false, expired: false };
   }
 }
 

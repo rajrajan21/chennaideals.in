@@ -5,6 +5,7 @@ import { ScrollRestoration } from 'react-router';
 import HomepageSameAsJsonLd from '@/components/HomepageSameAsJsonLd';
 import Footer from '@/layouts/parts/Footer';
 import Header from '@/layouts/parts/Header';
+import SafetyNotice from '@/components/SafetyNotice';
 import Website from '@/layouts/Website';
 
 /**
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <HomepageSameAsJsonLd />
       <ScrollRestoration />
       <Header />
+      <SafetyNotice />
       {children}
       <Footer />
     </Website>

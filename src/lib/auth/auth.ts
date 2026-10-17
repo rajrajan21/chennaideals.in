@@ -19,6 +19,7 @@ import { db } from '@/server/db/client';
 import { user, session, account, verification } from '@/server/db/schema';
 import { getSecret } from '#airo/secrets';
 import { sendResendEmail } from '@/lib/email/resend';
+import { buildPhonePlugin } from './phone-auth';
 
 // Lazy singleton - betterAuth() must NOT run at module init time.
 //
@@ -114,6 +115,7 @@ export function getAuth() {
     }),
 
     secret: authSecret,
+    plugins: [buildPhonePlugin()],
 
     // Protect admin status field from user input
     user: {

@@ -11,6 +11,7 @@ const DealDetailPage = lazy(() => import('./pages/deals/[id]'));
 const SubmitDealPage = lazy(() => import('./pages/deals/submit'));
 const AuthPage = lazy(() => import('./pages/auth/AuthPage'));
 const DealAlertsPage = lazy(() => import('./pages/alerts'));
+const DealHunterPage = lazy(() => import('./pages/admin/DealHunter'));
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPassword'));
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPassword'));
 
@@ -19,6 +20,7 @@ export const routes: RouteObject[] = [
   { path: '/deals/:id', element: <DealDetailPage /> },
   { path: '/deals/submit', element: <SubmitDealPage /> },
   { path: '/alerts', element: <DealAlertsPage /> },
+  { path: '/admin/hunter', element: <DealHunterPage /> },
   { path: '/login', element: <AuthPage mode="login" providers={["google", "facebook"]} /> },
   { path: '/signup', element: <AuthPage mode="signup" providers={["google", "facebook"]} /> },
   { path: '/forgot-password', element: <ForgotPasswordPage /> },
@@ -26,5 +28,5 @@ export const routes: RouteObject[] = [
   { id: 'airo-not-found', path: '*', element: <NotFoundPage /> },
 ];
 
-export type Path = '/' | '/deals/:id' | '/deals/submit' | '/alerts' | '/login' | '/signup' | '/forgot-password' | '/reset-password';
+export type Path = '/' | '/deals/:id' | '/deals/submit' | '/alerts' | '/admin/hunter' | '/login' | '/signup' | '/forgot-password' | '/reset-password';
 export type Params = Record<string, string | undefined>;

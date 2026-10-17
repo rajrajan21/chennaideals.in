@@ -9,6 +9,8 @@ export const user = mysqlTable('user', {
   name: varchar('name', { length: 255 }),
   email: varchar('email', { length: 255 }).notNull().unique(),
   emailVerified: boolean('email_verified').default(false),
+  phoneNumber: varchar('phone_number', { length: 20 }).unique(),
+  phoneNumberVerified: boolean('phone_number_verified').default(false),
   image: text('image'),
   isAdmin: boolean('is_admin').default(false),
   createdAt: timestamp('created_at').defaultNow(),

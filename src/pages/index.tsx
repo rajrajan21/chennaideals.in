@@ -82,6 +82,8 @@ const retailerCardColors: Record<string, { bg: string; text: string; icon: strin
 };
 
 // ── Main page ─────────────────────────────────────────────────────────────────
+type FeaturedDeal = { id: number; title: string; retailer: string | null; salePrice: string | null; originalPrice: string | null; savingsPercent: number | null };
+const rupeeText = (v: string | null) => (v ? '\u20b9' + Number(v).toLocaleString('en-IN') : '');
 export default function HomePage() {
   const countdown = useCountdown(7);
   const { user } = useSession();
@@ -96,6 +98,15 @@ export default function HomePage() {
   const [liveDeals, setLiveDeals] = useState<LiveDeal[]>([]);
   const [tabCounts, setTabCounts] = useState({ frontpage: 0, popular: 0, new: 0 });
   const [feedLoading, setFeedLoading] = useState(true);
+  const [loadedTab, setLoadedTab] = useState<FeedTab | null>(null);
+  const [featured, setFeatured] = useState<FeaturedDeal | null>(null);
+  const userPickedTab = useRef(false);
+  const dod = featured
+    ? { ...home.dealOfTheDay, title: featured.title, retailer: featured.retailer ?? home.dealOfTheDay.retailer, salePrice: rupeeText(featured.salePrice), originalPrice: rupeeText(featured.originalPrice), savings: featured.savingsPercent ? `${featured.savingsPercent}% OFF` : '', ctaLabel: 'View Deal', href: `/deals/${featured.id}` }
+    : { ...home.dealOfTheDay, href: '#' };
+  useEffect(() => {
+    fetch('/api/deals/deal-of-the-day').then((r) => (r.ok ? r.json() : null)).then((d) => setFeatured(d?.deal ?? null)).catch(() => { /* keep the default banner */ });
+  }, []);
   const [userVotes, setUserVotes] = useState<Record<number, number>>({});
 
   const fetchDeals = async (tab: FeedTab, cat: string, ret: string) => {
@@ -108,6 +119,7 @@ export default function HomePage() {
       const res = await fetch(`/api/deals?${params}`);
       const data = await res.json();
       setLiveDeals(data.deals || []);
+      setLoadedTab(tab);
       setTabCounts(data.tabCounts || { frontpage: 0, popular: 0, new: 0 });
     } finally {
       setFeedLoading(false);
@@ -115,6 +127,11 @@ export default function HomePage() {
   };
 
   useEffect(() => { fetchDeals(activeTab, activeCategory, activeRetailer); }, [activeTab, activeCategory, activeRetailer, searchQuery]);
+  useEffect(() => {
+    // nothing on Front Page, then nothing on Popular -> show New, with or without filters
+    if (userPickedTab.current || searchQuery || feedLoading || activeTab === 'new' || loadedTab !== activeTab) return;
+    if (liveDeals.length === 0) setActiveTab(activeTab === 'frontpage' ? 'popular' : 'new');
+  }, [feedLoading, liveDeals, activeTab, loadedTab, searchQuery]);
 
   const handleVote = async (dealId: number, value: 1 | -1) => {
     if (!user) { window.location.href = '/login'; return; }
@@ -205,31 +222,31 @@ export default function HomePage() {
                     className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide"
                     style={{ background: 'hsl(var(--deal-hot))', color: 'hsl(var(--deal-hot-foreground))' }}
                   >
-                    ⭐ <span>{home.dealOfTheDay.badge}</span>
+                    ⭐ <span>{dod.badge}</span>
                   </span>
                   {/* Retailer badge — static string key, not content prop */}
-                  {inlineRetailerBadge(home.dealOfTheDay.retailer)}
+                  {inlineRetailerBadge(dod.retailer)}
                 </div>
                 <h2 className="text-xl md:text-2xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: 'var(--font-heading)' }}>
-                  {home.dealOfTheDay.title}
+                  {dod.title}
                 </h2>
                 <div className="flex items-baseline gap-3 mb-4">
                   <span className="text-4xl font-bold text-white" style={{ fontFamily: 'var(--font-heading)' }}>
-                    {home.dealOfTheDay.salePrice}
+                    {dod.salePrice}
                   </span>
                   <span className="text-lg line-through text-white opacity-60">
-                    {home.dealOfTheDay.originalPrice}
+                    {dod.originalPrice}
                   </span>
                   <span className="px-3 py-1 rounded-full text-sm font-bold" style={{ background: 'hsl(var(--footer-bg) / 0.3)', color: 'white' }}>
-                    {home.dealOfTheDay.savings}
+                    {dod.savings}
                   </span>
                 </div>
                 <a
-                  href="#"
+                  href={dod.href}
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-transform hover:scale-105"
                   style={{ background: 'hsl(var(--footer-bg))', color: 'hsl(var(--primary))' }}
                 >
-                  <span>{home.dealOfTheDay.ctaLabel}</span> →
+                  <span>{dod.ctaLabel}</span> →
                 </a>
               </div>
 
@@ -345,7 +362,7 @@ export default function HomePage() {
                 {/* 3-tab lifecycle switcher */}
                 <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
                   {tabConfig.map(tab => (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                    <button key={tab.id} onClick={() => { userPickedTab.current = true; setActiveTab(tab.id); }}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all"
                       style={{
                         background: activeTab === tab.id ? 'hsl(var(--card))' : 'transparent',

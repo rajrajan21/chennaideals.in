@@ -50,7 +50,7 @@ export default function Footer() {
             </div>
             <div className="flex items-center gap-1.5 text-sm" style={{ color: 'hsl(var(--footer-text))' }}>
               <Mail size={14} className="text-primary" />
-              <span>deals@chennaideals.in</span>
+              <span>Chennaideals.in@gmail.com</span>
             </div>
             {/* Social icons */}
             <div className="flex gap-3 mt-5">
@@ -163,6 +163,11 @@ export default function Footer() {
           <p>© 2026 ChennaiDeals.in — Made with ❤️ in Chennai</p>
           <p>Deals sourced from Flipkart, Amazon, Meesho &amp; local Chennai retailers. Prices subject to change.</p>
         </div>
+      </div>
+      <div className="border-t" style={{ borderColor: 'hsl(var(--footer-surface))' }}>
+        <p className="max-w-7xl mx-auto px-4 py-4 text-xs leading-relaxed" style={{ color: 'hsl(var(--footer-subtle))' }}>
+          Disclaimer: deals are posted by community members. ChennaiDeals.in does not sell, ship or guarantee any product and is not responsible for any order, payment, delivery, refund or loss. Some websites advertise heavy discounts but never deliver, so please verify the seller and the price yourself before you buy. Every deal is checked automatically, but no check is perfect. Report a suspicious deal or contact the admin at Chennaideals.in@gmail.com.
+        </p>
       </div>
     </footer>
   );

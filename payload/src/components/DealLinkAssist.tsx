@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, Link2, Sparkles, Undo2 } from 'lucide-react';
-import { fetchDealDetails, fetchPulledImage, type DealDraft, type PulledImage } from '@/lib/deal-link';
+import { fetchDealDetails, type DealDraft, type PulledImage } from '@/lib/deal-link';
 
 interface Props {
   url: string;
@@ -18,22 +18,23 @@ interface Props {
   isAdmin?: boolean;
 }
 
-const PICTURE_WORKERS = 3;
+const STEPS = ['Reading the page...', 'Saving the pictures in full size...', 'Writing the draft...'];
 
 export default function DealLinkAssist({
   url, onUrl, hasTypedText, onApplyDraft, canUndo, onUndo, selected, onSelected, maxSelectable, disabled, isAdmin,
 }: Props) {
   const [loading, setLoading] = useState(false);
-  const [loadingPics, setLoadingPics] = useState<{ done: number; total: number } | null>(null);
-  const runId = useRef(0);
-  const selectedRef = useRef<string[]>(selected);
-  const maxRef = useRef(maxSelectable);
-  selectedRef.current = selected;
-  maxRef.current = maxSelectable;
+  const [step, setStep] = useState(0);
   const [error, setError] = useState('');
   const [notes, setNotes] = useState<string[]>([]);
   const [images, setImages] = useState<PulledImage[]>([]);
   const [filled, setFilled] = useState<{ usedAI: boolean; aiConfigured: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!loading) return;
+    const t = window.setInterval(() => setStep((s) => Math.min(s + 1, STEPS.length - 1)), 4000);
+    return () => window.clearInterval(t);
+  }, [loading]);
 
   // If the user adds pictures of their own, keep the total within the limit.
   useEffect(() => {
@@ -45,52 +46,18 @@ export default function DealLinkAssist({
     const link = url.trim();
     if (!link) return;
     if (hasTypedText && !window.confirm('Replace what you have typed with the details from the link? (You can undo it.)')) return;
-    const myRun = ++runId.current;
     setLoading(true);
-    setLoadingPics(null);
+    setStep(0);
     setError('');
     setNotes([]);
-    setImages([]);
     const result = await fetchDealDetails(link);
-    if (myRun !== runId.current) return;
     setLoading(false);
     if (!result.ok) { setError(result.error); return; }
     onApplyDraft(result.draft);
+    setImages(result.images);
     setNotes(result.notes);
     setFilled({ usedAI: result.usedAI, aiConfigured: result.aiConfigured });
-    onSelected([]);
-    if (!result.lookupId || result.candidateCount === 0) return;
-
-    // Pictures: a few at a time, shown as soon as each one is saved.
-    const lookupId = result.lookupId;
-    const total = result.candidateCount;
-    let next = 0;
-    let done = 0;
-    let expired = false;
-    setLoadingPics({ done: 0, total });
-    const worker = async () => {
-      while (!expired && myRun === runId.current) {
-        const index = next++;
-        if (index >= total) return;
-        const r = await fetchPulledImage(lookupId, index);
-        if (myRun !== runId.current) return;
-        done++;
-        setLoadingPics({ done, total });
-        if (!r.ok) { if (r.expired) expired = true; continue; }
-        const img = r.image;
-        if (!img) continue;
-        setImages((prev) => [...prev, img].sort((x, y) => (x.index ?? 0) - (y.index ?? 0)));
-        if (selectedRef.current.length < Math.max(0, maxRef.current)) {
-          const nextSel = [...selectedRef.current, img.token];
-          selectedRef.current = nextSel;
-          onSelected(nextSel);
-        }
-      }
-    };
-    await Promise.all(Array.from({ length: Math.min(PICTURE_WORKERS, total) }, worker));
-    if (myRun !== runId.current) return;
-    setLoadingPics(null);
-    if (expired) setNotes((n) => [...n, 'The picture lookup expired. Press "Get details from link" again to load pictures.']);
+    onSelected(result.images.slice(0, Math.max(0, maxSelectable)).map((i) => i.token));
   }
 
   function toggle(token: string) {
@@ -129,13 +96,7 @@ export default function DealLinkAssist({
       {loading && (
         <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground" role="status">
           <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          Reading the page...
-        </p>
-      )}
-      {loadingPics && (
-        <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground" role="status">
-          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          Loading pictures in full size ({loadingPics.done} of {loadingPics.total})...
+          {STEPS[step]} This can take up to a minute.
         </p>
       )}
       {error && <p className="mt-3 text-sm font-medium text-destructive" role="alert">{error}</p>}

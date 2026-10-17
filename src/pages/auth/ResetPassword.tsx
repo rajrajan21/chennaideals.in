@@ -53,13 +53,13 @@ export default function ResetPasswordPage() {
           <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-900" role="status">
             <p className="font-semibold">Password changed</p>
             <p className="mt-1">You can now sign in with your new password.</p>
-            <a href="/login" className="mt-3 inline-block rounded-md bg-blue-600 px-3 py-1.5 font-semibold text-white hover:bg-blue-700">Sign in</a>
+            <a href="/login" className="mt-3 inline-block rounded-md bg-secondary px-3 py-1.5 font-semibold text-secondary-foreground hover:opacity-90">Sign in</a>
           </div>
         ) : unusable ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950" role="alert">
             <p className="font-semibold">This reset link is not valid</p>
             <p className="mt-1">It may have expired (links last 1 hour) or already been used.</p>
-            <a href="/forgot-password" className="mt-3 inline-block rounded-md bg-blue-600 px-3 py-1.5 font-semibold text-white hover:bg-blue-700">Request a new link</a>
+            <a href="/forgot-password" className="mt-3 inline-block rounded-md bg-secondary px-3 py-1.5 font-semibold text-secondary-foreground hover:opacity-90">Request a new link</a>
           </div>
         ) : (
           <>
@@ -68,16 +68,16 @@ export default function ResetPasswordPage() {
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">New password</label>
                 <input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:bg-gray-100" placeholder="Min 8 chars, A-Z, 0-9, special" />
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100" placeholder="Min 8 chars, A-Z, 0-9, special" />
                 <p className="mt-1 text-xs text-gray-500">Must include uppercase, number, and special character</p>
               </div>
               <div>
                 <label htmlFor="confirm" className="block text-sm font-medium text-gray-700 mb-1">Confirm new password</label>
                 <input id="confirm" type="password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={loading}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:bg-gray-100" />
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100" />
               </div>
               <button type="submit" disabled={loading}
-                className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50">
+                className="w-full rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50">
                 {loading ? 'Saving...' : 'Change password'}
               </button>
             </form>

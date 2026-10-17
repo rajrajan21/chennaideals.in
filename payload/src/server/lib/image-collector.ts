@@ -12,7 +12,7 @@ const CONCURRENCY = 4;
 
 export type CollectedImage = { token: string; url: string; width: number | null; height: number | null; bytes: number };
 
-export type Got = { buf: Buffer; kind: { ext: string; mime: string }; dims: { width: number; height: number } | null };
+type Got = { buf: Buffer; kind: { ext: string; mime: string }; dims: { width: number; height: number } | null };
 
 async function tryDownload(url: string, referer: string): Promise<Got | null> {
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -21,7 +21,7 @@ async function tryDownload(url: string, referer: string): Promise<Got | null> {
         maxBytes: MAX_PULLED_IMAGE_BYTES,
         accept: 'image/jpeg,image/png,image/webp,*/*;q=0.5',
         referer,
-        timeoutMs: 7000,
+        timeoutMs: 9000,
       });
       if (res.status !== 200) return null; // a definite "no" - do not retry
       const kind = sniffImage(res.body);
@@ -34,7 +34,7 @@ async function tryDownload(url: string, referer: string): Promise<Got | null> {
   return null;
 }
 
-export async function bestVersion(candidate: string, referer: string): Promise<Got | null> {
+async function bestVersion(candidate: string, referer: string): Promise<Got | null> {
   for (const variant of imageUrlVariants(candidate)) {
     const got = await tryDownload(variant, referer);
     if (got && (!got.dims || Math.min(got.dims.width, got.dims.height) >= MIN_SIDE)) return got;

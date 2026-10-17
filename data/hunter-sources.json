@@ -1,0 +1,63 @@
+{
+  "ecommerce": [
+    {
+      "name": "Amazon.in",
+      "url": "https://www.amazon.in/deals"
+    },
+    {
+      "name": "Flipkart",
+      "url": "https://www.flipkart.com/offers-store"
+    },
+    {
+      "name": "Croma",
+      "url": "https://www.croma.com/deals-of-the-day"
+    },
+    {
+      "name": "Reliance Digital",
+      "url": "https://www.reliancedigital.in/collection/top-deals"
+    },
+    {
+      "name": "Vijay Sales",
+      "url": "https://www.vijaysales.com/deals"
+    },
+    {
+      "name": "Tata CLiQ",
+      "url": "https://www.tatacliq.com/"
+    },
+    {
+      "name": "Nykaa",
+      "url": "https://www.nykaa.com/sp/offers"
+    },
+    {
+      "name": "Snapdeal",
+      "url": "https://www.snapdeal.com/products/deals"
+    }
+  ],
+  "local": [
+    {
+      "name": "Poorvika Mobiles",
+      "url": "https://www.poorvika.com/offers",
+      "city": "Chennai"
+    },
+    {
+      "name": "Sangeetha Mobiles",
+      "url": "https://www.sangeethamobiles.com/",
+      "city": "Chennai"
+    },
+    {
+      "name": "Pothys",
+      "url": "https://www.pothys.com/",
+      "city": "Chennai"
+    },
+    {
+      "name": "Nalli Silks",
+      "url": "https://www.nalli.com/",
+      "city": "Chennai"
+    },
+    {
+      "name": "Girias",
+      "url": "https://www.girias.com/",
+      "city": "Chennai"
+    }
+  ]
+}

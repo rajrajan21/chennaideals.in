@@ -9,6 +9,7 @@ import MediaPicker from '@/components/MediaPicker';
 import { uploadDealMedia, MAX_IMAGES } from '@/lib/media';
 import DealLinkAssist from '@/components/DealLinkAssist';
 import { importPulledImages, type DealDraft } from '@/lib/deal-link';
+import { finalizeDeal } from '@/lib/finalize';
 
 const CATEGORIES = ['Electronics', 'Mobile Phones', 'Fashion', 'Groceries', 'Restaurants', 'Home & Kitchen', 'Travel', 'Beauty', 'Sports', 'Books', 'Toys', 'Other'];
 const RETAILERS = ['Flipkart', 'Amazon', 'Meesho', 'Myntra', 'Nykaa', 'BigBasket', 'Swiggy', 'Zomato', 'Local Store', 'Other'];
@@ -31,6 +32,8 @@ export default function SubmitDealPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [stage, setStage] = useState('');
+  const [retryId, setRetryId] = useState<number | null>(null);
 
   const savings = form.originalPrice && form.salePrice
     ? Math.round(((parseFloat(form.originalPrice) - parseFloat(form.salePrice)) / parseFloat(form.originalPrice)) * 100)
@@ -63,6 +66,8 @@ export default function SubmitDealPage() {
     if (!user) { navigate('/login'); return; }
     setSubmitting(true);
     setError('');
+    setRetryId(null);
+    setStage('Checking the link and website...');
     try {
       const res = await fetch('/api/deals', {
         method: 'POST',
@@ -76,6 +81,7 @@ export default function SubmitDealPage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Submission failed'); return; }
+      setStage('Adding your pictures...');
       const up = await uploadDealMedia(data.id, images, video, primaryImageIndex);
       let pullError = '';
       if (pulledTokens.length > 0) {
@@ -83,13 +89,33 @@ export default function SubmitDealPage() {
         if (!imp.ok) pullError = imp.error;
         else if (imp.skipped > 0) pullError = `${imp.skipped} of the chosen pictures could not be added. You can add them again from the deal page.`;
       }
-      const mediaError = !up.ok ? up.error : pullError;
+      setStage('Checking the pictures...');
+      const fin = await finalizeDeal(data.id);
+      if (!fin.ok) {
+        setError(fin.error);
+        if (!fin.rejected) setRetryId(data.id); // the deal is saved but still hidden: allow a retry
+        return;
+      }
+      const mediaError = !up.ok ? up.error : pullError || (fin.removedPictures > 0 ? `${fin.removedPictures} picture(s) were removed because they were too small, blank or blurry.` : '');
       navigate(`/deals/${data.id}`, mediaError ? { state: { uploadError: mediaError } } : undefined);
     } catch {
       setError('Network error. Please try again.');
     } finally {
       setSubmitting(false);
+      setStage('');
     }
+  };
+
+  const retryFinalCheck = async () => {
+    if (retryId === null) return;
+    setSubmitting(true);
+    setStage('Checking the pictures...');
+    setError('');
+    const fin = await finalizeDeal(retryId);
+    setSubmitting(false);
+    setStage('');
+    if (!fin.ok) { setError(fin.error); if (fin.rejected) setRetryId(null); return; }
+    navigate(`/deals/${retryId}`);
   };
 
   if (!user) return (
@@ -243,6 +269,11 @@ export default function SubmitDealPage() {
             {error && (
               <div className="p-3 rounded-xl text-sm font-medium" style={{ background: 'hsl(var(--destructive) / 0.1)', color: 'hsl(var(--destructive))' }}>
                 {error}
+                {retryId !== null && (
+                  <button type="button" onClick={retryFinalCheck} disabled={submitting} className="mt-2 block font-bold underline">
+                    Try the final check again
+                  </button>
+                )}
               </div>
             )}
                         {/* Photos & video */}
@@ -258,10 +289,14 @@ export default function SubmitDealPage() {
               />
             </div>
 
+            <p className="text-xs text-muted-foreground">
+              Every deal is checked automatically (link, website, wording, prices and pictures) before it is posted. Unsafe, adult or misleading deals are rejected and reported to the site admin.
+            </p>
+
             <button type="submit" disabled={submitting}
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] disabled:opacity-60 disabled:scale-100"
               style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
-              <Send size={16} /> <span>{submitting ? submit_deal.labels.submitting : submit_deal.labels.submit}</span>
+              <Send size={16} /> <span>{submitting ? (stage || submit_deal.labels.submitting) : submit_deal.labels.submit}</span>
             </button>
           </form>
         </motion.div>

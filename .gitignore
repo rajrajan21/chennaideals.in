@@ -31,3 +31,5 @@ migration-diagnostic-backup-*/
 drizzle-check-report.txt
 ChennaiDeals-Update-Pack-*/
 chennaideals-local-snapshot.zip
+_backup*
+src_backup*

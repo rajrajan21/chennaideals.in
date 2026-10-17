@@ -14,7 +14,6 @@ export function aiConfigured(): boolean {
   return Boolean(getSecret('GEMINI_API_KEY'));
 }
 
-let preferred: 'interactions' | 'generate' | '' = '';
 let day = '';
 let used = 0;
 function underDailyCap(): boolean {
@@ -98,13 +97,12 @@ export async function draftWithAI(f: ProductFacts, retailer: string, fetchImpl: 
     { url: `${base}/interactions`, body: { model, input: prompt, response_format: { type: 'text', mime_type: 'application/json', schema: SCHEMA } } },
     { url: `${base}/models/${model}:generateContent`, body: { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json' } } },
   ];
-  if (preferred === 'generate') attempts.reverse();
   for (const a of attempts) {
     try {
-      const res = await fetchImpl(a.url, { method: 'POST', headers, body: JSON.stringify(a.body), signal: AbortSignal.timeout(9_000) });
+      const res = await fetchImpl(a.url, { method: 'POST', headers, body: JSON.stringify(a.body), signal: AbortSignal.timeout(20_000) });
       if (res.ok) {
         const found = findDraft(await res.json());
-        if (found) { preferred = a.url.endsWith('/interactions') ? 'interactions' : 'generate'; return sanitizeAi(found); }
+        if (found) return sanitizeAi(found);
         continue;
       }
       console.error('Gemini request not accepted', { status: res.status });

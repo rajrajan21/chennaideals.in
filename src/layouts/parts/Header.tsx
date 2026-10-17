@@ -48,15 +48,13 @@ export default function Header() {
         <div className="max-w-[1600px] mx-auto w-full flex items-center gap-4">
              {/* Logo */}
           <Link to="/" className="shrink-0 flex items-center" aria-label="ChennaiDeals.in home">
-            <img
-              src="/logo.jpg"
-              alt="ChennaiDeals.in - Best deals voted by you, Every rupee counts!"
-              className="h-14 md:h-16 w-auto rounded-xl bg-white shadow-md ring-1 ring-white/30"
-            />
+            <span className="inline-flex overflow-hidden rounded-xl bg-background shadow-md ring-1 ring-white/30">
+              <img src="/logo.jpg" alt="ChennaiDeals.in - Best deals voted by you, Every rupee counts!" className="h-14 md:h-16 w-auto mix-blend-multiply" />
+            </span>
           </Link>
 
           {/* Search bar */}
-          <div className="flex-1 min-w-0 max-w-4xl relative">
+          <div className="flex-1 min-w-0 max-w-2xl relative">
             <form onSubmit={(e) => { e.preventDefault(); const query = searchQuery.trim(); navigate(query ? `/?q=${encodeURIComponent(query)}` : '/'); }}
               className="flex items-center bg-card rounded-lg overflow-hidden shadow-sm border-2"
               style={{ borderColor: 'hsl(var(--header-overlay-dark) / 0.1)' }}
@@ -86,15 +84,16 @@ export default function Header() {
 
           {/* Auth */}
           {user ? (
-            <div className="hidden md:flex items-center gap-3 ml-auto shrink-0">
+            <div className="hidden md:flex items-center gap-3 ml-2 shrink-0">
               <Link to="/alerts" className="text-sm font-semibold text-white hover:underline">Deal alerts</Link>
-              <span className="text-sm font-semibold text-white max-w-36 truncate">{user.name || user.email}</span>
+              {(user as { isAdmin?: boolean }).isAdmin && <Link to="/admin/hunter" className="text-sm font-bold text-white hover:underline">Deal Hunter</Link>}
+              <span className="text-sm font-semibold text-white max-w-48 truncate">{user.name || user.email}</span>
               <button onClick={() => signOut()} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-white/10 hover:bg-white/20 ring-1 ring-white/20 transition-all">
                 <LogOut size={14} /> Sign out
               </button>
             </div>
           ) : (
-            <div className="hidden md:flex items-center gap-3 ml-auto shrink-0">
+            <div className="hidden md:flex items-center gap-3 ml-2 shrink-0">
               <Link to="/login" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-white/10 hover:bg-white/20 ring-1 ring-white/20 transition-all">
                 <User size={14} /> Sign in
               </Link>

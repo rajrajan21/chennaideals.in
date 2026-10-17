@@ -34,6 +34,7 @@ export default async function handler(req: Request, res: Response) {
     const offset = (pageNum - 1) * limitNum;
 
     const conditions = [];
+    if (status === 'pending' || status === 'rejected') return res.json({ deals: [], tabCounts: { new: 0, popular: 0, frontpage: 0 }, page: pageNum, limit: limitNum });
 
     if (status === 'all') {
       conditions.push(inArray(deals.status, ['new', 'popular', 'frontpage']));
